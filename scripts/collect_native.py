@@ -104,13 +104,18 @@ def main():
         source.parent.mkdir(exist_ok=True)
         if not source.exists():
             checked(['git','clone','--no-checkout',project['repository_url'],source])
-        checked(['git','-C',source,'-c','core.autocrlf=false','checkout','--detach',project['commit_sha']])
+        checked(['git','-C',source,'-c','core.autocrlf=false','-c','core.eol=lf','checkout','--detach',project['commit_sha']])
         commit = checked(['git','-C',source,'rev-parse','HEAD'])['stdout'].strip()
         tree = checked(['git','-C',source,'rev-parse','HEAD^{tree}'])['stdout'].strip()
         if commit != project['commit_sha'] or checked(['git','-C',source,'status','--porcelain'])['stdout'].strip():
             raise ValueError('Source identity/cleanliness check failed')
-        if sha(source/project['license_file']) != project['license_sha256']:
+        # Review the canonical Git blob; Windows checkout EOL conversion is a
+        # workspace property and must not be mistaken for an upstream license edit.
+        license_blob = subprocess.run(['git','-C',str(source),'show',commit+':'+project['license_file']],
+                                      capture_output=True,check=True,timeout=120).stdout
+        if hashlib.sha256(license_blob).hexdigest() != project['license_sha256']:
             raise ValueError('Reviewed license content changed')
+        license_worktree_sha256 = sha(source/project['license_file'])
         snapshot = out/'sources'/(project['id']+'.tar')
         checked(['git','-C',source,'archive','--format=tar','--output='+str(snapshot),'HEAD'])
         name = 'cl' if system == 'windows' else ('clang++' if project['language']=='cpp' else 'clang')
@@ -125,7 +130,8 @@ def main():
                 folder = out/'builds'/project['id']/profile/str(attempt)
                 folder.mkdir(parents=True,exist_ok=False)
                 record = {'schema_version':'native-0.3.0','project':project['id'],'language':project['language'],
-                          'source':{**project,'commit_sha':commit,'tree_hash':tree,'snapshot_path':snapshot.relative_to(out).as_posix(),'snapshot_sha256':sha(snapshot)},
+                          'source':{**project,'commit_sha':commit,'tree_hash':tree,'snapshot_path':snapshot.relative_to(out).as_posix(),'snapshot_sha256':sha(snapshot),
+                                    'license_worktree_sha256':license_worktree_sha256},
                           'target':{'os':system,'arch':args.arch,'format':{'windows':'pe','macos':'macho','linux':'elf'}[system],
                                     'abi':{'windows':'msvc','macos':'darwin','linux':'sysv'}[system],
                                     'abi_detail_status':'raw-compiler-loader-evidence-only'},
