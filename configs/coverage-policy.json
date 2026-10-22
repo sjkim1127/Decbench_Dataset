@@ -1,0 +1,27 @@
+{
+  "schema_version": "0.3.0",
+  "policy_version": "2026-10-23-balanced-1",
+  "quota_unit": "successful-distinct-project-source-toolchain-target-profile-build",
+  "os_weights": {"linux": 40, "windows": 35, "macos": 25},
+  "format_by_os": {"linux": "elf", "windows": "pe", "macos": "macho"},
+  "arch_weights_within_os": {
+    "linux": {"x86_64": 50, "aarch64": 30, "x86": 15, "armv7": 5},
+    "windows": {"x86_64": 55, "x86": 30, "aarch64": 15},
+    "macos": {"aarch64": 60, "x86_64": 40}
+  },
+  "language_weights": {"c": 22, "cpp": 22, "rust": 14, "go": 14, "zig": 6, "swift": 8, "fortran": 5, "d": 5, "nim": 4},
+  "track_weights": {"clean": 85, "obfuscated": 15},
+  "project_strategy": "new-repository-families-before-extra-optimization-variants",
+  "quota_rules": [
+    "Weights are collection targets, not claims about available artifacts or hard admission filters.",
+    "Track successful builds, unique source projects, source functions and machine functions separately.",
+    "Replays, stripped derivatives, debug artifacts and duplicate binary hashes do not add quota units.",
+    "Language/OS/architecture cells are capability-driven; unavailable cells remain visible and do not get fabricated samples.",
+    "Prefer the largest normalized target deficit among currently buildable jobs.",
+    "One repository family should not exceed 2 percent once 50 project families are available.",
+    "Keep original/obfuscated pairs, forks and architecture/compiler variants in one split group.",
+    "Do not hold back valid corpus acquisition while rare target/toolchain cells are being provisioned."
+  ],
+  "secondary_targets": ["linux-riscv64", "linux-ppc64le", "linux-mipsel"],
+  "runtime_axes": {"linux": ["glibc", "musl"], "windows": ["msvc-md", "msvc-mt", "mingw-ucrt"], "macos": ["deployment-target", "sdk-build", "libcxx"]}
+}

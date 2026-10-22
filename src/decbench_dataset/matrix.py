@@ -120,7 +120,7 @@ def validate_matrix(matrix: dict[str, Any], toolchains: dict[str, Any] | None = 
     return errors
 
 
-def _variant_id(matrix_version: str, language: str, compiler_set: str, profile_id: str, target_id: str) -> str:
+def _variant_id(matrix_version: str, language: str, compiler_set: str, profile_id: str, target_id: str, *, profile: dict | None = None, target: dict | None = None) -> str:
     canonical = json.dumps(
         {
             "matrix_version": matrix_version,
@@ -128,6 +128,8 @@ def _variant_id(matrix_version: str, language: str, compiler_set: str, profile_i
             "compiler_set": compiler_set,
             "profile_id": profile_id,
             "target_id": target_id,
+            "profile": profile,
+            "target": target,
         },
         sort_keys=True,
         separators=(",", ":"),
@@ -175,7 +177,8 @@ def expand_matrix(
                         continue
                     yield Variant(
                         variant_id=_variant_id(
-                            matrix["matrix_version"], lang, compiler_set, profile["id"], target["id"]
+                            matrix["matrix_version"], lang, compiler_set, profile["id"], target["id"],
+                            profile=profile, target=target
                         ),
                         language=lang,
                         compiler_set=compiler_set,

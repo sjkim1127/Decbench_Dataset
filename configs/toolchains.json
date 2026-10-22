@@ -4,47 +4,198 @@
   "sets": {
     "gcc": {
       "family": "gcc",
-      "languages": ["c", "cpp"],
-      "supported_formats": ["elf"],
-      "versions": []
+      "languages": [
+        "c",
+        "cpp"
+      ],
+      "supported_formats": [
+        "elf"
+      ],
+      "versions": [
+        {
+          "version_raw": "gcc (GCC) 13.5.0\nCopyright (C) 2023 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+          "container_image_digest": "gcc@sha256:16ae525998c94df36a116c191524256b1d46e72d7a0e9aaf6c153455e40eb5b8",
+          "target_ids": [
+            "linux-x86_64-elf"
+          ],
+          "platform": "linux/amd64",
+          "evidence": "configs/pilot.json; published raw build manifests",
+          "note": "GCC/G++ driver hashes differ; manifests capture each actual driver and companion tool.",
+          "drivers": {
+            "c": {
+              "executable": "/usr/local/bin/gcc",
+              "sha256": "45824969693b4f68fe4b26a12041891014bc8ec7c0d5f3a7cedf589daa33600a"
+            },
+            "cpp": {
+              "executable": "/usr/local/bin/g++",
+              "sha256": "4ec1deccc48c1ceddc79cd94d3ddbaa2d00a3627f619962c86c0ffd969900adb"
+            }
+          }
+        }
+      ]
     },
     "clang": {
       "family": "clang",
-      "languages": ["c", "cpp"],
-      "supported_formats": ["elf", "macho"],
+      "languages": [
+        "c",
+        "cpp"
+      ],
+      "supported_formats": [
+        "elf",
+        "macho"
+      ],
       "versions": []
     },
     "msvc": {
       "family": "msvc",
-      "languages": ["c", "cpp"],
-      "supported_formats": ["pe"],
+      "languages": [
+        "c",
+        "cpp"
+      ],
+      "supported_formats": [
+        "pe"
+      ],
       "runner_os": "windows",
       "versions": []
     },
     "clang-cl": {
       "family": "clang-cl",
-      "languages": ["c", "cpp"],
-      "supported_formats": ["pe"],
+      "languages": [
+        "c",
+        "cpp"
+      ],
+      "supported_formats": [
+        "pe"
+      ],
       "runner_os": "windows",
       "versions": []
     },
     "rustc": {
       "family": "rustc",
-      "languages": ["rust"],
-      "supported_formats": ["elf", "pe", "macho"],
+      "languages": [
+        "rust"
+      ],
+      "supported_formats": [
+        "elf",
+        "pe",
+        "macho"
+      ],
       "versions": []
     },
     "go": {
       "family": "go",
-      "languages": ["go"],
-      "supported_formats": ["elf", "pe", "macho"],
+      "languages": [
+        "go"
+      ],
+      "supported_formats": [
+        "elf",
+        "pe",
+        "macho"
+      ],
       "versions": []
     },
     "zig": {
       "family": "zig",
-      "languages": ["zig"],
-      "supported_formats": ["elf", "pe", "macho"],
+      "languages": [
+        "zig"
+      ],
+      "supported_formats": [
+        "elf",
+        "pe",
+        "macho"
+      ],
       "versions": []
+    },
+    "swiftc": {
+      "family": "swiftc",
+      "languages": [
+        "swift"
+      ],
+      "supported_formats": [
+        "elf",
+        "pe",
+        "macho"
+      ],
+      "versions": [],
+      "note": "Candidate formats only; exact target support requires a capability probe."
+    },
+    "gfortran": {
+      "family": "gfortran",
+      "languages": [
+        "fortran"
+      ],
+      "supported_formats": [
+        "elf",
+        "pe",
+        "macho"
+      ],
+      "versions": [],
+      "note": "Candidate formats only; exact target support requires a capability probe."
+    },
+    "flang": {
+      "family": "flang",
+      "languages": [
+        "fortran"
+      ],
+      "supported_formats": [
+        "elf",
+        "pe",
+        "macho"
+      ],
+      "versions": [],
+      "note": "Candidate formats only; exact target support requires a capability probe."
+    },
+    "dmd": {
+      "family": "dmd",
+      "languages": [
+        "d"
+      ],
+      "supported_formats": [
+        "elf",
+        "pe",
+        "macho"
+      ],
+      "versions": [],
+      "note": "Candidate formats only; exact target support requires a capability probe."
+    },
+    "ldc": {
+      "family": "ldc",
+      "languages": [
+        "d"
+      ],
+      "supported_formats": [
+        "elf",
+        "pe",
+        "macho"
+      ],
+      "versions": [],
+      "note": "Candidate formats only; exact target support requires a capability probe."
+    },
+    "gdc": {
+      "family": "gdc",
+      "languages": [
+        "d"
+      ],
+      "supported_formats": [
+        "elf",
+        "pe",
+        "macho"
+      ],
+      "versions": [],
+      "note": "Candidate formats only; exact target support requires a capability probe."
+    },
+    "nim": {
+      "family": "nim",
+      "languages": [
+        "nim"
+      ],
+      "supported_formats": [
+        "elf",
+        "pe",
+        "macho"
+      ],
+      "versions": [],
+      "note": "Candidate formats only; exact target support requires a capability probe."
     }
   }
 }

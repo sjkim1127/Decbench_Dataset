@@ -4,10 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "decbench-dataset"
-version = "0.1.0"
+version = "0.2.0"
 description = "Reproducible multi-language binary corpus tooling for DecBench/Fission"
 requires-python = ">=3.11"
 dependencies = []
+
+[project.optional-dependencies]
+publish = ["huggingface_hub>=1.0,<2", "pyarrow>=18,<24", "jsonschema>=4.23,<5"]
+test = ["jsonschema>=4.23,<5"]
 
 [project.scripts]
 decbench-dataset = "decbench_dataset.cli:main"

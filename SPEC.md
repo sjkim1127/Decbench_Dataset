@@ -4,7 +4,7 @@ Status: **foundation draft**. Every externally sourced claim in this document mu
 
 ## 1. Purpose
 
-[design] Build a large, reproducible corpus of compiled binaries and ground-truth build/debug artifacts for C, C++, Rust, Go and Zig. The corpus is intended for future DecBench language expansion and internal Fission development. v0 stores corpus material and provenance only; it does not define decompiler scores.
+[design] Build a large, reproducible corpus of compiled binaries and ground-truth build/debug artifacts for C, C++, Rust, Go, Zig, Swift, Fortran, D and Nim. The corpus is intended for future DecBench language expansion and internal Fission development. v0 stores corpus material and provenance only; it does not define decompiler scores.
 
 ## 2. Corpus lifecycle
 
