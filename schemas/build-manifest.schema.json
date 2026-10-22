@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/sjkim1127/Decbench_Dataset/schemas/build-manifest.schema.json",
+  "title": "DecBench Dataset Build Manifest",
+  "type": "object",
+  "required": [
+    "schema_version", "build_id", "project", "source", "language", "target",
+    "toolchain", "profile", "runner", "commands", "artifacts", "status"
+  ],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "build_id": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "project": {"type": "string", "minLength": 1},
+    "language": {"enum": ["c", "cpp", "rust", "go", "zig"]},
+    "source": {
+      "type": "object",
+      "required": ["repository_url", "commit_sha", "tree_hash", "license"],
+      "properties": {
+        "repository_url": {"type": "string"},
+        "commit_sha": {"type": "string", "minLength": 7},
+        "tree_hash": {"type": "string"},
+        "license": {
+          "type": "object",
+          "required": ["spdx", "review_status"],
+          "properties": {
+            "spdx": {"type": "string"},
+            "review_status": {"enum": ["allowed", "blocked", "manual-review", "unknown"]}
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "target": {
+      "type": "object",
+      "required": ["id", "os", "format", "arch"],
+      "properties": {
+        "id": {"type": "string"},
+        "os": {"type": "string"},
+        "format": {"enum": ["elf", "pe", "macho"]},
+        "arch": {"type": "string"},
+        "triple": {"type": ["string", "null"]}
+      },
+      "additionalProperties": true
+    },
+    "toolchain": {
+      "type": "object",
+      "required": ["family", "version_raw", "executable"],
+      "properties": {
+        "family": {"type": "string"},
+        "version_raw": {"type": "string", "minLength": 1},
+        "version_major": {"type": ["integer", "null"]},
+        "version_minor": {"type": ["integer", "null"]},
+        "version_patch": {"type": ["integer", "null"]},
+        "build_identity": {"type": ["string", "null"]},
+        "executable": {"type": "string"},
+        "executable_sha256": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+        "container_image_digest": {"type": ["string", "null"]}
+      },
+      "additionalProperties": true
+    },
+    "profile": {"type": "object", "required": ["id"], "additionalProperties": true},
+    "runner": {
+      "type": "object",
+      "required": ["os", "isolation"],
+      "properties": {
+        "os": {"type": "string"},
+        "isolation": {"type": "string"},
+        "network_during_build": {"const": false}
+      },
+      "additionalProperties": true
+    },
+    "commands": {"type": "array", "items": {"type": "string"}},
+    "environment": {"type": "object", "additionalProperties": {"type": "string"}},
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "path", "sha256", "size"],
+        "properties": {
+          "kind": {"type": "string"},
+          "path": {"type": "string"},
+          "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "size": {"type": "integer", "minimum": 0}
+        },
+        "additionalProperties": true
+      }
+    },
+    "reproducibility": {
+      "type": "object",
+      "properties": {
+        "attempts": {"type": "integer", "minimum": 1},
+        "binary_hash_equal": {"type": ["boolean", "null"]},
+        "debug_hash_equal": {"type": ["boolean", "null"]},
+        "notes": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    },
+    "status": {"enum": ["success", "failed", "skipped", "blocked"]},
+    "skip_reason": {"type": ["string", "null"]},
+    "qualified": {"type": "boolean", "default": false},
+    "eval_ready": {"type": "object", "additionalProperties": {"type": "boolean"}}
+  },
+  "additionalProperties": true
+}

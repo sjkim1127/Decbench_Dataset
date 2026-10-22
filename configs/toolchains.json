@@ -1,0 +1,50 @@
+{
+  "schema_version": "0.1.0",
+  "note": "Populate exact toolchain entries only after verifying installation/source/image identities. Empty version lists are intentional in the foundation commit; build execution must refuse unresolved versions.",
+  "sets": {
+    "gcc": {
+      "family": "gcc",
+      "languages": ["c", "cpp"],
+      "supported_formats": ["elf"],
+      "versions": []
+    },
+    "clang": {
+      "family": "clang",
+      "languages": ["c", "cpp"],
+      "supported_formats": ["elf", "macho"],
+      "versions": []
+    },
+    "msvc": {
+      "family": "msvc",
+      "languages": ["c", "cpp"],
+      "supported_formats": ["pe"],
+      "runner_os": "windows",
+      "versions": []
+    },
+    "clang-cl": {
+      "family": "clang-cl",
+      "languages": ["c", "cpp"],
+      "supported_formats": ["pe"],
+      "runner_os": "windows",
+      "versions": []
+    },
+    "rustc": {
+      "family": "rustc",
+      "languages": ["rust"],
+      "supported_formats": ["elf", "pe", "macho"],
+      "versions": []
+    },
+    "go": {
+      "family": "go",
+      "languages": ["go"],
+      "supported_formats": ["elf", "pe", "macho"],
+      "versions": []
+    },
+    "zig": {
+      "family": "zig",
+      "languages": ["zig"],
+      "supported_formats": ["elf", "pe", "macho"],
+      "versions": []
+    }
+  }
+}

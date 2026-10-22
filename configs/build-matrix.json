@@ -1,0 +1,102 @@
+{
+  "schema_version": "0.1.0",
+  "matrix_version": "2026-10-foundation-1",
+  "version_resolution": {
+    "policy": "locked-toolchain-manifest",
+    "manifest": "configs/toolchains.json",
+    "require_exact_version_before_build": true
+  },
+  "sampling": {
+    "default_strategy": "anchors",
+    "allow_full_cross": false,
+    "note": "Full Cartesian expansion must be explicitly enabled by a future executor flag."
+  },
+  "architectures": {
+    "x86": {"bits": 32, "isa": "x86"},
+    "x86_64": {"bits": 64, "isa": "x86"},
+    "armv7": {"bits": 32, "isa": "arm"},
+    "aarch64": {"bits": 64, "isa": "arm"},
+    "riscv64": {"bits": 64, "isa": "riscv", "secondary": true},
+    "ppc64le": {"bits": 64, "isa": "powerpc", "secondary": true}
+  },
+  "targets": [
+    {"id": "linux-x86-elf", "os": "linux", "format": "elf", "arch": "x86", "primary": true},
+    {"id": "linux-x86_64-elf", "os": "linux", "format": "elf", "arch": "x86_64", "primary": true},
+    {"id": "linux-armv7-elf", "os": "linux", "format": "elf", "arch": "armv7", "primary": true},
+    {"id": "linux-aarch64-elf", "os": "linux", "format": "elf", "arch": "aarch64", "primary": true},
+    {"id": "windows-x86-pe", "os": "windows", "format": "pe", "arch": "x86", "primary": true},
+    {"id": "windows-x86_64-pe", "os": "windows", "format": "pe", "arch": "x86_64", "primary": true},
+    {"id": "windows-aarch64-pe", "os": "windows", "format": "pe", "arch": "aarch64", "primary": true},
+    {"id": "macos-x86_64-macho", "os": "macos", "format": "macho", "arch": "x86_64", "primary": true},
+    {"id": "macos-aarch64-macho", "os": "macos", "format": "macho", "arch": "aarch64", "primary": true},
+    {"id": "linux-riscv64-elf", "os": "linux", "format": "elf", "arch": "riscv64", "primary": false},
+    {"id": "linux-ppc64le-elf", "os": "linux", "format": "elf", "arch": "ppc64le", "primary": false}
+  ],
+  "languages": {
+    "c": {
+      "compiler_sets": ["gcc", "clang", "msvc", "clang-cl"],
+      "profiles": [
+        {"id": "O0", "opt": "O0", "inline": "compiler-default", "lto": "off"},
+        {"id": "Og", "opt": "Og", "inline": "compiler-default", "lto": "off"},
+        {"id": "O1", "opt": "O1", "inline": "compiler-default", "lto": "off"},
+        {"id": "O2", "opt": "O2", "inline": "compiler-default", "lto": "off"},
+        {"id": "O2-noinline", "opt": "O2", "inline": "disabled", "lto": "off"},
+        {"id": "O3", "opt": "O3", "inline": "compiler-default", "lto": "off"},
+        {"id": "O3-noinline", "opt": "O3", "inline": "disabled", "lto": "off"},
+        {"id": "Os", "opt": "Os", "inline": "compiler-default", "lto": "off"},
+        {"id": "Oz", "opt": "Oz", "inline": "compiler-default", "lto": "off", "capability": "oz"},
+        {"id": "Ofast", "opt": "Ofast", "inline": "compiler-default", "lto": "off", "capability": "ofast"},
+        {"id": "O2-lto", "opt": "O2", "inline": "compiler-default", "lto": "full", "capability": "lto"},
+        {"id": "O3-lto", "opt": "O3", "inline": "compiler-default", "lto": "full", "capability": "lto"}
+      ]
+    },
+    "cpp": {
+      "compiler_sets": ["gcc", "clang", "msvc", "clang-cl"],
+      "profiles_from": "c"
+    },
+    "rust": {
+      "compiler_sets": ["rustc"],
+      "profiles": [
+        {"id": "opt0", "opt": "0", "lto": "off", "panic": "unwind", "codegen_units": "default"},
+        {"id": "opt1", "opt": "1", "lto": "off", "panic": "unwind", "codegen_units": "default"},
+        {"id": "opt2", "opt": "2", "lto": "off", "panic": "unwind", "codegen_units": "default"},
+        {"id": "opt3", "opt": "3", "lto": "off", "panic": "unwind", "codegen_units": "default"},
+        {"id": "opts", "opt": "s", "lto": "off", "panic": "unwind", "codegen_units": "default"},
+        {"id": "optz", "opt": "z", "lto": "off", "panic": "unwind", "codegen_units": "default"},
+        {"id": "opt2-cgu1", "opt": "2", "lto": "off", "panic": "unwind", "codegen_units": 1},
+        {"id": "opt2-thinlto", "opt": "2", "lto": "thin", "panic": "unwind", "codegen_units": 1, "capability": "thin-lto"},
+        {"id": "opt3-fatlto", "opt": "3", "lto": "fat", "panic": "unwind", "codegen_units": 1, "capability": "fat-lto"},
+        {"id": "opt2-abort", "opt": "2", "lto": "off", "panic": "abort", "codegen_units": "default"}
+      ]
+    },
+    "go": {
+      "compiler_sets": ["go"],
+      "profiles": [
+        {"id": "default", "opt": "default", "inline": "compiler-default"},
+        {"id": "N-l", "opt": "disabled", "inline": "disabled", "gcflags": ["all=-N", "all=-l"]},
+        {"id": "N", "opt": "disabled", "inline": "compiler-default", "gcflags": ["all=-N"]},
+        {"id": "noinline", "opt": "default", "inline": "disabled", "gcflags": ["all=-l"]}
+      ]
+    },
+    "zig": {
+      "compiler_sets": ["zig"],
+      "profiles": [
+        {"id": "Debug", "opt": "Debug"},
+        {"id": "ReleaseSafe", "opt": "ReleaseSafe"},
+        {"id": "ReleaseFast", "opt": "ReleaseFast"},
+        {"id": "ReleaseSmall", "opt": "ReleaseSmall"}
+      ]
+    }
+  },
+  "debug_artifacts": {
+    "elf": {"required_kind": "dwarf", "split_debug": true},
+    "pe": {"required_kind": "pdb-codeview", "retain_pdb": true, "retain_pe_codeview": true},
+    "macho": {"required_kind": "dsym-dwarf", "retain_dsym": true}
+  },
+  "derived": {
+    "loader_metadata": true,
+    "machine_cfg": true,
+    "compiler_ir_cfg": "when-supported",
+    "source_cfg": "when-supported"
+  }
+}

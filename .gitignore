@@ -1,0 +1,18 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+
+# Generated corpus data must never be committed to the source repo.
+artifacts/
+corpus/
+shards/
+work/
+
+# Local credentials / publish configuration
+.env
+*.token

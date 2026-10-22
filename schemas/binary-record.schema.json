@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/sjkim1127/Decbench_Dataset/schemas/binary-record.schema.json",
+  "title": "DecBench Dataset Binary Record",
+  "type": "object",
+  "required": [
+    "schema_version", "binary_sha256", "build_id", "language", "format", "arch",
+    "loader", "debug", "artifact_paths"
+  ],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "binary_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "build_id": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "language": {"enum": ["c", "cpp", "rust", "go", "zig"]},
+    "format": {"enum": ["elf", "pe", "macho"]},
+    "arch": {"type": "string"},
+    "endianness": {"enum": ["little", "big", "unknown"]},
+    "bits": {"enum": [32, 64]},
+    "image_base": {"type": ["integer", "null"], "minimum": 0},
+    "entrypoint": {"type": ["integer", "null"], "minimum": 0},
+    "loader": {
+      "type": "object",
+      "required": ["extractor", "extractor_version", "metadata_path"],
+      "properties": {
+        "extractor": {"type": "string"},
+        "extractor_version": {"type": "string"},
+        "metadata_path": {"type": "string"}
+      },
+      "additionalProperties": true
+    },
+    "debug": {
+      "type": "object",
+      "required": ["kind", "present"],
+      "properties": {
+        "kind": {"enum": ["dwarf", "split-dwarf", "pdb-codeview", "dsym-dwarf", "none", "other"]},
+        "present": {"type": "boolean"},
+        "sidecar_paths": {"type": "array", "items": {"type": "string"}},
+        "codeview": {"type": ["object", "null"], "additionalProperties": true},
+        "macho_uuid": {"type": ["string", "null"]}
+      },
+      "additionalProperties": true
+    },
+    "artifact_paths": {
+      "type": "object",
+      "required": ["unstripped"],
+      "properties": {
+        "unstripped": {"type": "string"},
+        "stripped": {"type": ["string", "null"]},
+        "function_table": {"type": ["string", "null"]},
+        "cfg_manifest": {"type": ["string", "null"]}
+      },
+      "additionalProperties": true
+    },
+    "qualified": {"type": "boolean", "default": false},
+    "eval_ready": {"type": "object", "additionalProperties": {"type": "boolean"}}
+  },
+  "additionalProperties": true
+}
