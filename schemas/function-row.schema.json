@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/sjkim1127/Decbench_Dataset/schemas/function-row.schema.json",
+  "title": "DecBench Dataset Function Row",
+  "type": "object",
+  "required": [
+    "schema_version", "binary_sha256", "function_uid", "address_kind", "start_address",
+    "origin", "has_source_body", "debug_provenance", "qualified"
+  ],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "binary_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "function_uid": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "address_kind": {"enum": ["rva", "va", "file_offset"]},
+    "start_address": {"type": "integer", "minimum": 0},
+    "end_address": {"type": ["integer", "null"], "minimum": 0},
+    "size": {"type": ["integer", "null"], "minimum": 0},
+    "image_base": {"type": ["integer", "null"], "minimum": 0},
+    "name_mangled": {"type": ["string", "null"]},
+    "name_demangled": {"type": ["string", "null"]},
+    "source_mappings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "file": {"type": ["string", "null"]},
+          "line_start": {"type": ["integer", "null"], "minimum": 1},
+          "line_end": {"type": ["integer", "null"], "minimum": 1},
+          "column_start": {"type": ["integer", "null"], "minimum": 0},
+          "column_end": {"type": ["integer", "null"], "minimum": 0},
+          "is_inline": {"type": ["boolean", "null"]}
+        },
+        "additionalProperties": true
+      }
+    },
+    "origin": {"enum": ["project", "stdlib", "runtime", "dependency", "generated", "unknown"]},
+    "has_source_body": {"type": "boolean"},
+    "is_inlined": {"type": ["boolean", "null"]},
+    "is_folded_or_icf": {"type": ["boolean", "null"]},
+    "aliases": {"type": "array", "items": {"type": "string"}},
+    "debug_provenance": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind"],
+        "properties": {
+          "kind": {"enum": ["dwarf", "pdb", "codeview", "dsym", "symbol-table", "other"]},
+          "die_offset": {"type": ["integer", "null"], "minimum": 0},
+          "low_pc": {"type": ["integer", "null"], "minimum": 0},
+          "section": {"type": ["integer", "null"], "minimum": 0},
+          "offset": {"type": ["integer", "null"], "minimum": 0},
+          "rva": {"type": ["integer", "null"], "minimum": 0},
+          "record_id": {"type": ["string", "null"]},
+          "producer": {"type": ["string", "null"]}
+        },
+        "additionalProperties": true
+      }
+    },
+    "cfg": {
+      "type": "object",
+      "properties": {
+        "machine": {"type": "array", "items": {"type": "object", "additionalProperties": true}},
+        "compiler_ir": {"type": "array", "items": {"type": "object", "additionalProperties": true}},
+        "source": {"type": "array", "items": {"type": "object", "additionalProperties": true}}
+      },
+      "additionalProperties": true
+    },
+    "qualified": {"type": "boolean", "default": false},
+    "qualification_version": {"type": ["string", "null"]},
+    "eval_ready": {"type": "object", "additionalProperties": {"type": "boolean"}}
+  },
+  "additionalProperties": true
+}
