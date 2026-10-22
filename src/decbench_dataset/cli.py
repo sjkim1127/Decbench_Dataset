@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 from .matrix import expand_matrix, load_json, validate_matrix
+from .toolchain import ToolchainDiscoveryError, discover_toolchain
 
 
 def _toolchain_path(matrix_path: Path, matrix: dict) -> Path | None:
@@ -68,6 +69,16 @@ def cmd_expand_matrix(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_discover_toolchain(args: argparse.Namespace) -> int:
+    try:
+        record = discover_toolchain(args.family, args.executable)
+    except ToolchainDiscoveryError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
+    print(json.dumps(record, indent=2, sort_keys=True))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="decbench-dataset")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -82,6 +93,11 @@ def build_parser() -> argparse.ArgumentParser:
     expand.add_argument("--include-secondary", action="store_true")
     expand.add_argument("--limit", type=int)
     expand.set_defaults(func=cmd_expand_matrix)
+
+    discover = sub.add_parser("discover-toolchain", help="capture an installed compiler's exact version and executable hash")
+    discover.add_argument("family", choices=["gcc", "clang", "clang-cl", "msvc", "rustc", "go", "zig"])
+    discover.add_argument("executable", help="compiler executable name or path")
+    discover.set_defaults(func=cmd_discover_toolchain)
 
     return parser
 
