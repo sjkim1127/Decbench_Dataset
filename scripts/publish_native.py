@@ -21,12 +21,18 @@ def build_key(row):
         argv = []
         for arg in command['argv']:
             arg = arg.replace(cwd, 'SOURCE')
+            prefix = ''
+            for switch in ('/Fo', '/Fd', '/OUT:', '/PDB:'):
+                if arg.startswith(switch):
+                    prefix, arg = switch, arg[len(switch):]
+                    break
             arg = re.sub(r'[^\s]*?[/\\]builds[/\\]' + re.escape(row['project']) +
                          r'[/\\]' + re.escape(row['profile']) + r'[/\\][12](?=[/\\])', 'BUILD', arg)
-            argv.append(arg)
+            argv.append(prefix + arg)
         commands.append(argv)
     identity = {'source':row['source'], 'target':row['target'], 'profile':row['profile'],
                 'toolchain':row['toolchain'], 'commands':commands,
+                'environment':{k:v for k,v in row['environment'].items() if k!='PATH'},
                 'collector_sha256':row['collector_sha256'],
                 'runner_image':row['host'].get('runner_image'),
                 'runner_image_version':row['host'].get('runner_image_version'),
@@ -111,7 +117,7 @@ def main():
         if 'config_name: native_attempts' not in card:
             card=card.replace('---\n# DecBench',config+'---\n# DecBench',1)
         marker='## Native cross-platform campaigns'
-        if marker in card: card=card[:card.index(marker)]
+        card=re.sub(r'\n## Native cross-platform campaigns\n.*?(?=\n## |\Z)', '', card, flags=re.S)
         card+='\n'+marker+'\n\nThe initial C/C++ Linux pilot above is supplemented by native raw attempts.\n'+\
               'Use config `native_attempts`; replay attempts are separate rows, not extra distinct builds.\n'+\
               'See `native/'+args.campaign+'/summary.json` for actual collected OS/format/architecture counts.\n'+\

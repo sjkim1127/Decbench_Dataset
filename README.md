@@ -67,3 +67,12 @@ available in `.github/workflows/collect-pilot.yml` through manual dispatch once
 these source changes are pushed. Uploads use the local HF authentication or a
 separate publisher secret; builders never receive it. The authorized public
 repository is https://huggingface.co/datasets/sjkim1127/decbench-multilang-corpus.
+
+## Cross-platform campaign
+
+[Coverage policy and execution](docs/PLATFORM_CAMPAIGN.md) and
+[measured hosted results](docs/PLATFORM_REPORT.md) cover PE/PDB, ELF and
+Mach-O/dSYM acquisition. `configs/research/github-candidates.json` records 48
+pinned project/tool candidates; six reviewed recipes produced 84 native build
+variants over seven target cells. The source-backed Go/garble pilot adds three
+clean/obfuscated pairs. All are raw, unqualified data.
