@@ -66,6 +66,7 @@ def validate_matrix(matrix: dict[str, Any], toolchains: dict[str, Any] | None = 
         return errors
 
     target_ids: set[str] = set()
+    target_formats: set[str] = set()
     for target in matrix.get("targets", []):
         tid = target.get("id")
         if not tid:
@@ -77,6 +78,8 @@ def validate_matrix(matrix: dict[str, Any], toolchains: dict[str, Any] | None = 
         for key in ("os", "format", "arch"):
             if not target.get(key):
                 errors.append(f"target {tid}: missing {key}")
+        if target.get("format"):
+            target_formats.add(target["format"])
 
     languages = matrix.get("languages", {})
     if not isinstance(languages, dict) or not languages:
@@ -91,6 +94,14 @@ def validate_matrix(matrix: dict[str, Any], toolchains: dict[str, Any] | None = 
         for compiler_set in compiler_sets:
             if toolchains is not None and compiler_set not in known_sets:
                 errors.append(f"{language}: unknown compiler set {compiler_set}")
+                continue
+            if toolchains is not None:
+                spec = toolchains["sets"][compiler_set]
+                supported = set(spec.get("supported_formats", []))
+                if not supported:
+                    errors.append(f"toolchain set {compiler_set}: supported_formats is empty")
+                elif not (supported & target_formats):
+                    errors.append(f"toolchain set {compiler_set}: no compatible target format")
         try:
             profiles = _resolved_profiles(matrix, language)
         except MatrixError as exc:
@@ -124,18 +135,32 @@ def _variant_id(matrix_version: str, language: str, compiler_set: str, profile_i
     return hashlib.sha256(canonical).hexdigest()
 
 
+def _target_supported(target: dict[str, Any], toolchain_spec: dict[str, Any] | None) -> bool:
+    if toolchain_spec is None:
+        return True
+    supported_formats = set(toolchain_spec.get("supported_formats", []))
+    if target.get("format") not in supported_formats:
+        return False
+    runner_os = toolchain_spec.get("runner_os")
+    if runner_os and target.get("os") != runner_os:
+        return False
+    return True
+
+
 def expand_matrix(
     matrix: dict[str, Any],
     *,
+    toolchains: dict[str, Any] | None = None,
     language: str | None = None,
     primary_only: bool = True,
 ) -> Iterable[Variant]:
-    errors = validate_matrix(matrix)
+    errors = validate_matrix(matrix, toolchains)
     if errors:
         raise MatrixError("; ".join(errors))
 
     languages = [language] if language else list(matrix["languages"].keys())
     targets = [t for t in matrix["targets"] if (t.get("primary", True) or not primary_only)]
+    toolchain_sets = (toolchains or {}).get("sets", {})
 
     for lang in languages:
         if lang not in matrix["languages"]:
@@ -143,8 +168,11 @@ def expand_matrix(
         node = matrix["languages"][lang]
         profiles = _resolved_profiles(matrix, lang)
         for compiler_set in node["compiler_sets"]:
+            toolchain_spec = toolchain_sets.get(compiler_set) if toolchains is not None else None
             for profile in profiles:
                 for target in targets:
+                    if not _target_supported(target, toolchain_spec):
+                        continue
                     yield Variant(
                         variant_id=_variant_id(
                             matrix["matrix_version"], lang, compiler_set, profile["id"], target["id"]

@@ -15,19 +15,21 @@ def _toolchain_path(matrix_path: Path, matrix: dict) -> Path | None:
     candidate = Path(rel)
     if candidate.is_absolute():
         return candidate
-    # Matrix paths are normally configs/build-matrix.json; resolve repo-relative first.
     repo_root = matrix_path.parent.parent if matrix_path.parent.name == "configs" else matrix_path.parent
     return repo_root / candidate
+
+
+def _load_toolchains(matrix_path: Path, matrix: dict) -> dict | None:
+    path = _toolchain_path(matrix_path, matrix)
+    if path and path.exists():
+        return load_json(path)
+    return None
 
 
 def cmd_validate_matrix(args: argparse.Namespace) -> int:
     matrix_path = Path(args.matrix)
     matrix = load_json(matrix_path)
-    toolchains = None
-    toolchain_path = _toolchain_path(matrix_path, matrix)
-    if toolchain_path and toolchain_path.exists():
-        toolchains = load_json(toolchain_path)
-
+    toolchains = _load_toolchains(matrix_path, matrix)
     errors = validate_matrix(matrix, toolchains)
     if errors:
         for error in errors:
@@ -47,8 +49,15 @@ def cmd_validate_matrix(args: argparse.Namespace) -> int:
 
 
 def cmd_expand_matrix(args: argparse.Namespace) -> int:
-    matrix = load_json(args.matrix)
-    variants = expand_matrix(matrix, language=args.language, primary_only=not args.include_secondary)
+    matrix_path = Path(args.matrix)
+    matrix = load_json(matrix_path)
+    toolchains = _load_toolchains(matrix_path, matrix)
+    variants = expand_matrix(
+        matrix,
+        toolchains=toolchains,
+        language=args.language,
+        primary_only=not args.include_secondary,
+    )
     count = 0
     for variant in variants:
         if args.limit is not None and count >= args.limit:
@@ -78,8 +87,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = build_parser()
-    args = parser.parse_args(argv)
+    args = build_parser().parse_args(argv)
     return args.func(args)
 
 
