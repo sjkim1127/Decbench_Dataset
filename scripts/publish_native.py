@@ -95,11 +95,13 @@ def main():
     pq.write_table(pa.Table.from_pylist(metadata),data/'attempts.parquet',compression='zstd')
     (destination/'artifact-index.jsonl').write_text(''.join(json.dumps(r)+'\n' for r in index))
     summary={'campaign':args.campaign,'targets':totals,'distinct_build_ids':len({r['build_id'] for r in metadata}),
+             'successful_distinct_build_ids':len({r['build_id'] for r in metadata if r['status']=='success'}),
+             'failed_distinct_build_ids':len({r['build_id'] for r in metadata if r['status']=='failed'}),
              'qualified':0,'source_projects':sorted({r['project'] for r in metadata})}
     (destination/'summary.json').write_text(json.dumps(summary,indent=2)+'\n')
     root=Path(__file__).resolve().parents[1]
     collection=destination/'collection';collection.mkdir(exist_ok=True)
-    for relative in ('configs/native-projects.json','configs/coverage-policy.json','configs/obfuscation-policy.json',
+    for relative in ('configs/native-projects.json','configs/native-projects-batch2.json','configs/coverage-policy.json','configs/obfuscation-policy.json',
                      'configs/research/github-candidates.json','scripts/collect_native.py','scripts/publish_native.py',
                      'docs/PLATFORM_CAMPAIGN.md'):
         p=collection/relative;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes((root/relative).read_bytes())

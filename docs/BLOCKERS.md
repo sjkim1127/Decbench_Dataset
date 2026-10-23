@@ -20,7 +20,7 @@ This file records unresolved decisions or unavailable infrastructure. Items here
 
 ## Nine-language expansion
 
-- [ ] Implement and qualify Rust, Go, Zig, Swift, Fortran, D and Nim build adapters.
+- [ ] Expand Rust/Go beyond the current bounded raw collectors; implement Zig, Swift, Fortran, D and Nim collection adapters. Qualification is separate from acquisition.
 - [ ] Trace/normalize compiler child argv and response files for arbitrary build systems.
 - [ ] Native Windows/macOS pilot and non-x86-64 targets.
 - [ ] Normalized function/debug mappings and independent CFG extraction.

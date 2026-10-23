@@ -49,7 +49,7 @@ No Hugging Face upload is performed by default. Upload support will remain dry-r
 See [the detailed contract](docs/COLLECTION_CONTRACT.md) for OS/ABI/ISA/SDK,
 compiler/linker version, full ordered options and language-specific provenance.
 The nine-language matrix is a planning policy; executable adapters are currently
-limited to the real C/C++ Linux pilot. No scores or function qualification yet.
+implemented for native C/C++, the dedicated Go clean/garble pilot, and offline Docker Rust CLI builds. No scores or function qualification yet.
 
 ```bash
 python3 -m venv .venv
@@ -76,3 +76,11 @@ Mach-O/dSYM acquisition. `configs/research/github-candidates.json` records 48
 pinned project/tool candidates; six reviewed recipes produced 84 native build
 variants over seven target cells. The source-backed Go/garble pilot adds three
 clean/obfuscated pairs. All are raw, unqualified data.
+
+
+## Continued raw acquisition
+
+[Batch 2 measured results](docs/BATCH2_REPORT.md) add six C/C++ projects over
+seven target cells and full ripgrep/hyperfine Rust CLI builds. Successful and
+failed attempts remain separate. This remains raw source/binary acquisition;
+benchmark eligibility and semantic/function qualification are not implemented.
