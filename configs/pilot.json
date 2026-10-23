@@ -1,0 +1,10 @@
+{
+  "schema_version": "0.2.0",
+  "image": "gcc@sha256:16ae525998c94df36a116c191524256b1d46e72d7a0e9aaf6c153455e40eb5b8",
+  "platform": "linux/amd64",
+  "profiles": {"O0": ["-O0"], "O2": ["-O2"], "O3": ["-O3"], "Os": ["-Os"]},
+  "projects": [
+    {"id": "cjson", "language": "c", "repository_url": "https://github.com/DaveGamble/cJSON.git", "commit_sha": "c859b25da02955fef659d658b8f324b5cde87be3", "compiler": "gcc", "source_file": "cJSON.c", "standard": "c99", "license_file": "LICENSE", "spdx": "MIT"},
+    {"id": "pugixml", "language": "cpp", "repository_url": "https://github.com/zeux/pugixml.git", "commit_sha": "ee86beb30e4973f5feffe3ce63bfa4fbadf72f38", "compiler": "g++", "source_file": "src/pugixml.cpp", "standard": "c++11", "license_file": "LICENSE.md", "spdx": "MIT"}
+  ]
+}

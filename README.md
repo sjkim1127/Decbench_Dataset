@@ -6,7 +6,7 @@ Foundation repository for a large, reproducible, multi-language binary corpus fo
 
 The corpus is designed around five first-class axes:
 
-1. **Language**: C, C++, Rust, Go, Zig.
+1. **Language**: C, C++, Rust, Go, Zig, Swift, Fortran, D, Nim.
 2. **Compiler**: family **and exact compiler version/build identity**.
 3. **Optimization**: more than the legacy O0/O2/O2-noinline set; profiles include size/speed/debug, inlining and LTO dimensions where supported.
 4. **Target**: OS, object format and architecture (ELF/PE-COFF/Mach-O; x86, x86_64, ARM32, AArch64, plus extensible secondary architectures).
@@ -43,3 +43,58 @@ python -m decbench_dataset expand-matrix configs/build-matrix.json --language cp
 ```
 
 No Hugging Face upload is performed by default. Upload support will remain dry-run-first until explicitly enabled.
+
+## Nine-language collection and initial pilot
+
+See [the detailed contract](docs/COLLECTION_CONTRACT.md) for OS/ABI/ISA/SDK,
+compiler/linker version, full ordered options and language-specific provenance.
+The nine-language matrix is a planning policy; executable adapters are currently
+implemented for native C/C++, the dedicated Go clean/garble pilot, and offline Docker Rust CLI builds. No scores or function qualification yet.
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -e '.[publish,test]'
+docker pull --platform linux/amd64 gcc@sha256:16ae525998c94df36a116c191524256b1d46e72d7a0e9aaf6c153455e40eb5b8
+.venv/bin/python scripts/collect_pilot.py --output corpus/pilot
+.venv/bin/python scripts/publish_pilot.py --corpus corpus/pilot --output shards/pilot
+# Explicit publication, after inspecting local shards:
+.venv/bin/python scripts/publish_pilot.py --corpus corpus/pilot --output shards/pilot --publish
+```
+
+Use a fresh `--output` directory for each campaign: existing attempt directories
+are refused to prevent accidental overwrite. Linux GitHub Actions execution is
+available in `.github/workflows/collect-pilot.yml` through manual dispatch once
+these source changes are pushed. Uploads use the local HF authentication or a
+separate publisher secret; builders never receive it. The authorized public
+repository is https://huggingface.co/datasets/sjkim1127/decbench-multilang-corpus.
+
+## Cross-platform campaign
+
+[Coverage policy and execution](docs/PLATFORM_CAMPAIGN.md) and
+[measured hosted results](docs/PLATFORM_REPORT.md) cover PE/PDB, ELF and
+Mach-O/dSYM acquisition. `configs/research/github-candidates.json` records 48
+pinned project/tool candidates; six reviewed recipes produced 84 native build
+variants over seven target cells. The source-backed Go/garble pilot adds three
+clean/obfuscated pairs. All are raw, unqualified data.
+
+
+## Continued raw acquisition
+
+[Batch 2 measured results](docs/BATCH2_REPORT.md) add six C/C++ projects over
+seven target cells and full ripgrep/hyperfine Rust CLI builds. Successful and
+failed attempts remain separate. This remains raw source/binary acquisition;
+benchmark eligibility and semantic/function qualification are not implemented.
+
+## Mandatory upstream-only source policy
+
+Only reviewed original open-source project products are admitted. Dataset-authored
+programs and collector-written entrypoint wrappers/harnesses are prohibited.
+Original program-file bytes are checked before/after compilation; upstream and
+compiler-generated build intermediates remain separately identified derived data.
+See [the enforced policy](docs/UPSTREAM_ONLY.md).
+
+[The five-language upstream batch](docs/UPSTREAM_LANGUAGES_REPORT.md) adds Mint
+(Swift), ZLS (Zig), JSON-Fortran, DustMite (D) and Nimble (Nim): 14 variants, 28
+successful attempts, with no dataset-authored program code. All nine planned
+languages now have bounded raw product collections; platform breadth and semantic
+qualification remain separate work.

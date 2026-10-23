@@ -38,22 +38,12 @@ def compute_build_id(manifest: dict[str, Any]) -> str:
     canonical = {
         "project": manifest["project"],
         "language": manifest["language"],
-        "source": {
-            "repository_url": source["repository_url"],
-            "commit_sha": source["commit_sha"],
-            "tree_hash": source["tree_hash"],
-        },
-        "target": {
-            "id": target["id"],
-            "triple": target.get("triple"),
-        },
-        "toolchain": {
-            "family": toolchain["family"],
-            "version_raw": toolchain["version_raw"],
-            "build_identity": toolchain.get("build_identity"),
-            "executable_sha256": toolchain.get("executable_sha256"),
-            "container_image_digest": toolchain.get("container_image_digest"),
-        },
+        "source": source,
+        "target": target,
+        "toolchain": toolchain,
+        "runner": {k: v for k, v in manifest.get("runner", {}).items() if k != "cpu"},
+        "dependencies": manifest.get("dependencies", []),
+        "capture_policy": manifest.get("capture_policy", {}),
         "profile": profile,
         "commands": manifest.get("commands", []),
         "environment": manifest.get("environment", {}),
