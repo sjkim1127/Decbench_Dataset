@@ -84,3 +84,17 @@ clean/obfuscated pairs. All are raw, unqualified data.
 seven target cells and full ripgrep/hyperfine Rust CLI builds. Successful and
 failed attempts remain separate. This remains raw source/binary acquisition;
 benchmark eligibility and semantic/function qualification are not implemented.
+
+## Mandatory upstream-only source policy
+
+Only reviewed original open-source project products are admitted. Dataset-authored
+programs and collector-written entrypoint wrappers/harnesses are prohibited.
+Original program-file bytes are checked before/after compilation; upstream and
+compiler-generated build intermediates remain separately identified derived data.
+See [the enforced policy](docs/UPSTREAM_ONLY.md).
+
+[The five-language upstream batch](docs/UPSTREAM_LANGUAGES_REPORT.md) adds Mint
+(Swift), ZLS (Zig), JSON-Fortran, DustMite (D) and Nimble (Nim): 14 variants, 28
+successful attempts, with no dataset-authored program code. All nine planned
+languages now have bounded raw product collections; platform breadth and semantic
+qualification remain separate work.

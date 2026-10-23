@@ -20,7 +20,8 @@ This file records unresolved decisions or unavailable infrastructure. Items here
 
 ## Nine-language expansion
 
-- [ ] Expand Rust/Go beyond the current bounded raw collectors; implement Zig, Swift, Fortran, D and Nim collection adapters. Qualification is separate from acquisition.
+- [x] Bounded raw collectors exist for all nine languages, using original upstream products only. See `UPSTREAM_LANGUAGES_REPORT.md` for actual platform coverage.
+- [ ] Expand project counts and platform/toolchain coverage per language; qualification remains separate from acquisition.
 - [ ] Trace/normalize compiler child argv and response files for arbitrary build systems.
 - [ ] Native Windows/macOS pilot and non-x86-64 targets.
 - [ ] Normalized function/debug mappings and independent CFG extraction.
