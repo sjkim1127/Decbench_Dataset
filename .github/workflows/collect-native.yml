@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: ['codex/corpus-platform-expansion']
-    paths: ['.github/workflows/collect-native.yml', 'scripts/collect_native.py', 'configs/native-projects.json']
+    paths: ['.github/workflows/collect-native.yml', 'scripts/collect_native.py', 'configs/native-projects.json', 'configs/native-projects-batch2.json']
 permissions:
   contents: read
 concurrency:
@@ -16,13 +16,13 @@ jobs:
       max-parallel: 4
       matrix:
         include:
-          - {runner: windows-2022, arch: x86_64, vcarch: amd64}
-          - {runner: windows-2022, arch: x86, vcarch: x86}
-          - {runner: windows-2022, arch: aarch64, vcarch: arm64}
-          - {runner: macos-15, arch: aarch64}
-          - {runner: macos-15, arch: x86_64}
-          - {runner: ubuntu-24.04, arch: x86_64}
-          - {runner: ubuntu-24.04-arm, arch: aarch64}
+          - {runner: windows-2022, arch: x86_64, vcarch: amd64, profiles: 'O0 O2'}
+          - {runner: windows-2022, arch: x86, vcarch: x86, profiles: 'O0 O2'}
+          - {runner: windows-2022, arch: aarch64, vcarch: arm64, profiles: 'O0 O2'}
+          - {runner: macos-15, arch: aarch64, profiles: 'O0 O2'}
+          - {runner: macos-15, arch: x86_64, profiles: 'O0 O2'}
+          - {runner: ubuntu-24.04, arch: x86_64, profiles: 'O0 O2 O3 Os'}
+          - {runner: ubuntu-24.04-arm, arch: aarch64, profiles: 'O0 O2 O3 Os'}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 180
     steps:
@@ -48,7 +48,7 @@ jobs:
             } else { Write-Host $_ }
           }
       - name: Collect pinned sources, binaries and debug artifacts twice
-        run: python scripts/collect_native.py --arch ${{ matrix.arch }} --output corpus/native-${{ matrix.runner }}-${{ matrix.arch }}
+        run: python scripts/collect_native.py --config configs/native-projects-batch2.json --profiles ${{ matrix.profiles }} --arch ${{ matrix.arch }} --output corpus/native-${{ matrix.runner }}-${{ matrix.arch }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -78,8 +78,11 @@ def main():
     p.add_argument('--arch', required=True, choices=['x86_64','x86','aarch64'])
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--config', type=Path, default=ROOT/'configs/native-projects.json')
+    p.add_argument('--profiles', nargs='+', choices=['O0','O2','O3','Os'], default=['O0','O2'])
     args = p.parse_args()
     system = {'Darwin':'macos','Windows':'windows','Linux':'linux'}[platform.system()]
+    if system == 'windows' and any(x not in ('O0','O2') for x in args.profiles):
+        raise ValueError('MSVC adapter currently supports only O0/O2; unsupported profiles cannot be remapped')
     out = args.output.resolve()
     out.mkdir(parents=True, exist_ok=True)
     cfg = json.loads(args.config.read_text())
@@ -124,7 +127,7 @@ def main():
                      'version':run([executable,'/Bv' if system=='windows' else '--version'])}
         companion = ['link','dumpbin'] if system=='windows' else ['ld','dsymutil','strip','dwarfdump','otool'] if system=='macos' else ['ld','objcopy','readelf']
         toolchain['companions'] = {n:{'executable':shutil.which(n),'sha256':sha(shutil.which(n))} for n in companion if shutil.which(n)}
-        for profile in ('O0','O2'):
+        for profile in args.profiles:
             attempts=[]
             for attempt in (1,2):
                 folder = out/'builds'/project['id']/profile/str(attempt)
