@@ -26,6 +26,11 @@ The raw corpus does **not** define a decompiler score. Qualification and metric 
 
 ## Design principles
 
+The public dataset also provides [architecture and language views](docs/DATASET_VIEWS.md):
+`architecture_x86`, `architecture_x86_64`, `architecture_aarch64`, and nine
+`language_*` configs. Filter OS/format/ABI within either view; shared binaries are
+referenced at an immutable revision rather than copied. These remain raw records.
+
 - Never identify functions by name alone.
 - Preserve raw inputs and provenance; derived artifacts are replaceable and versioned.
 - Never execute produced binaries during corpus generation.
