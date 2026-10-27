@@ -12,6 +12,7 @@ dependencies = []
 [project.optional-dependencies]
 publish = ["huggingface_hub>=1.0,<2", "pyarrow>=18,<24", "jsonschema>=4.23,<5"]
 test = ["jsonschema>=4.23,<5"]
+qualification = ["pyelftools>=0.31,<1", "jsonschema>=4.23,<5"]
 
 [project.scripts]
 decbench-dataset = "decbench_dataset.cli:main"

@@ -2,12 +2,61 @@
 from collections import Counter
 import hashlib
 import json
+import re
 from pathlib import PurePosixPath
 
 ARCH_ALIASES = {'amd64': 'x86_64', 'x64': 'x86_64', 'arm64': 'aarch64',
-                'i386': 'x86', 'i686': 'x86'}
+                'i386': 'x86', 'i686': 'x86', 'armhf': 'armv7'}
 LANGUAGES = {'c', 'cpp', 'rust', 'go', 'zig', 'swift', 'fortran', 'd', 'nim'}
-ARCHITECTURES = {'x86', 'x86_64', 'aarch64'}
+ARCHITECTURES = {'x86', 'x86_64', 'aarch64', 'armv7', 'riscv64'}
+
+
+def tool_dimensions(row, manifest):
+    """Promote explicit tool evidence; absent facts stay null."""
+    toolchain = manifest.get('toolchain') or {}
+    report = manifest.get('report') or {}
+    tools = manifest.get('tools') or report.get('tools') or report.get('compiler') or {}
+    family = row.get('compiler_family') or toolchain.get('family')
+    version = row.get('compiler_version_raw')
+    driver = toolchain.get('driver')
+    if isinstance(driver, dict):
+        version = version or driver.get('stdout') or driver.get('stderr')
+        driver = driver.get('requested_executable') or driver.get('path')
+    elif isinstance(toolchain.get('version'), dict):
+        info = toolchain['version']
+        version = version or info.get('stdout') or info.get('stderr')
+    if not family and driver:
+        name = driver.replace('\\', '/').rsplit('/', 1)[-1].lower()
+        if name in ('cl', 'cl.exe'): family = 'msvc'
+        elif 'clang-cl' in name: family = 'clang-cl'
+        elif 'clang' in name: family = 'clang'
+        elif 'gcc' in name or 'g++' in name: family = 'gcc'
+    if not family:
+        choices = {'rust':'rustc','go':'go','zig':'zig','swift':'swiftc',
+                   'fortran':'gfortran','d':'ldc2','nim':'nim'}
+        key = choices.get(row.get('language'))
+        item = tools.get(key) if key else None
+        if not item and key == 'go':
+            item = manifest.get('go')
+        if item:
+            family = key
+            info = item.get('version') or {}
+            version = info if isinstance(info, str) else info.get('stdout') or info.get('stderr')
+    version = version.strip() if isinstance(version, str) and version.strip() else None
+    match = re.search(r'\b(\d+\.\d+(?:\.\d+){0,2})\b', version or '')
+    linker = toolchain.get('linker') or {}
+    linker_version = (linker.get('stdout') if linker.get('returncode') == 0 else None) if isinstance(linker, dict) else None
+    if not linker_version:
+        correction = manifest.get('toolchain_version_correction') or {}
+        linker_version = correction.get('stdout') if correction.get('returncode') == 0 else None
+    linker_path = linker.get('requested_executable') or linker.get('path') if isinstance(linker, dict) else None
+    linker_family = 'lld' if linker_path and 'lld' in linker_path else ('gnu-ld' if linker_path and linker_path.endswith('-ld') else None)
+    return {'compiler_family':family, 'compiler_version':match.group(1) if match else None,
+            'compiler_version_raw':version, 'compiler_target':row.get('compiler_target'),
+            'linker_family':row.get('linker_family') or linker_family,
+            'linker_version':row.get('linker_version') or (linker_version.strip() if linker_version else None),
+            'stdlib_family':row.get('stdlib_family'), 'stdlib_version':row.get('stdlib_version'),
+            'libc_family':row.get('libc_family')}
 
 
 def metadata_file(path):
@@ -56,6 +105,8 @@ def normalize(row, metadata_path, row_number, repo, revision):
     profile = row.get('profile')
     if isinstance(profile, dict):
         profile = profile.get('id')
+    dimensions = tool_dimensions(row, manifest)
+    dimensions['compiler_target'] = dimensions['compiler_target'] or target.get('triple') or row.get('target_triple')
     return {
         'catalog_schema_version': '1.0.0',
         'record_id': hashlib.sha256(f'{repo}@{revision}:{location}'.encode()).hexdigest(),
@@ -65,6 +116,7 @@ def normalize(row, metadata_path, row_number, repo, revision):
         'abi': row.get('abi') or target.get('abi'),
         'target_triple': row.get('target_triple') or target.get('triple'),
         'profile': profile, 'track': row.get('track'), 'status': status,
+        'isa_mode':target.get('isa_mode'), **dimensions,
         'qualified': False, 'row_grain': 'build-with-replays' if is_pilot else 'build-attempt',
         'attempt': row.get('attempt'), 'physical_attempt_count': len(replay_paths) if is_pilot else 1,
         'source_repository': row.get('source_repository') or source.get('repository_url')
@@ -116,14 +168,30 @@ def update_card(card, specs, revision):
     for name, pattern in specs:
         header = header.rstrip() + f'\n- config_name: {name}\n  data_files:\n  - split: raw\n    path: {pattern}\n'
     body = re.sub(r'\n## Architecture and language views\n.*?(?=\n## |\Z)', '', parts[2], flags=re.S)
+    body = re.sub(r'\n## ARMv7 and RISC-V64 raw campaign\n.*?(?=\n## |\Z)', '', body, flags=re.S)
+    body = body.replace(
+        'Source snapshots, compiled binaries and provenance for a future multi-language\n'
+        'decompilation dataset. Planned languages: C, C++, Rust, Go, Zig, Swift, Fortran, D,\n'
+        'Nim. **This initial pilot contains C and C++ only.**',
+        'The following section describes the original C/C++ pilot.\n\n## Initial C/C++ pilot\n\n'
+        'That pilot contains C and C++ only; later campaigns cover all nine listed languages.')
+    body = body.replace(
+        "Upstream source and source-derived artifacts remain subject to each project's\n"
+        'MIT license. Exact copyright notices and permission terms are retained inside\n'
+        'each source snapshot. The corpus is not relicensed under a blanket license.\n'
+        'Only license-reviewed pilot translation units are included.',
+        'Each upstream source and derived artifact retains its own project license.\n'
+        'The initial cJSON/pugixml pilot uses MIT licenses; later campaigns include\n'
+        'MIT, BSD, zlib and other reviewed upstream licenses. Exact notices are kept\n'
+        'with source snapshots. There is no blanket relicensing of the corpus.')
+    architectures = ', '.join(f'`{name}`' for name, _ in specs if name.startswith('architecture_'))
     body += f'''
 ## Architecture and language views
 
-Choose `all_records`, `architecture_x86_64`, `architecture_x86`,
-`architecture_aarch64`, or a `language_` config (`c`, `cpp`, `rust`, `go`,
+Choose `all_records`, an architecture config ({architectures}), or a `language_` config (`c`, `cpp`, `rust`, `go`,
 `zig`, `swift`, `fortran`, `d`, `nim`). Every config uses split `raw`.
 For example: `load_dataset("sjkim1127/decbench-multilang-corpus", "architecture_aarch64", split="raw")`.
-Filter columns `language`, `arch`, `os`, `format`, `abi`, `profile`, `status`
+Filter columns `language`, `arch`, `isa_mode`, `os`, `format`, `abi`, `profile`, `status`, `compiler_family`, `compiler_version`, `compiler_target`, `linker_family`
 to select intersections. `aarch64` is the canonical ARM64 spelling.
 
 These views reference existing payloads without duplicating binaries. Original
@@ -131,7 +199,8 @@ metadata is pinned to dataset revision `{revision}`. Use
 `source_dataset_revision` when downloading `payload_repo_path` and
 `artifact_index_repo_path`; tar member hashes are in that artifact index.
 Full compiler/options/environment evidence remains in `manifest_json` and
-`original_metadata_json`. Missing ABI/triple values remain null.
+`original_metadata_json`. Missing tool, ABI, or triple values remain null;
+compiler/linker columns only report evidence actually captured.
 
 Rows preserve original granularity: initial pilot rows contain two replays;
 other rows are individual attempts. Read `row_grain`, `attempt`, and
@@ -140,5 +209,18 @@ Failed build attempts stay visible; filter `status == "success"` for available
 products. All records remain raw/unqualified. See `views/summary.json` for
 counts and `views/README.md` for download/filter examples. Views are a frozen
 snapshot and must be regenerated when new campaigns are published.
+'''
+    if any(name == 'architecture_armv7' for name, _ in specs):
+        body += '''
+## ARMv7 and RISC-V64 raw campaign
+
+Six pinned upstream C/C++ projects were compiled for ARMv7 ARM and Thumb modes
+and RISC-V64 with GCC and Clang. O0/O1/O2/O3/Os/Oz, O2-noinline, O2-LTO and
+Clang O2-ThinLTO are retained; inspect the campaign summary for actual counts.
+Each attempt includes original/stripped ELF, external debug, raw execve traces,
+normalized observed child argv, flags, toolchain/image identity and logs. GNU
+debuglink CRC and stripped `.text` equality are checked; none proves semantics.
+See `native/cross-isa-2026-10-28/summary.json`. Its qualification pilot contains
+source/DWARF/symbol candidates with zero qualified functions.
 '''
     return '---' + header + '---' + body

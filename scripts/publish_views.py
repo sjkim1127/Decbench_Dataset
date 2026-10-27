@@ -69,6 +69,12 @@ def main():
     views = destination / 'views'
     views.mkdir()
     table = pa.Table.from_pylist(rows)
+    # An all-unknown field must still have a stable queryable string schema.
+    for name in ('compiler_family','compiler_version','compiler_version_raw','compiler_target',
+                 'linker_family','linker_version','stdlib_family','stdlib_version','libc_family','isa_mode'):
+        i = table.schema.get_field_index(name)
+        if pa.types.is_null(table.schema.field(i).type):
+            table = table.set_column(i, name, pa.nulls(len(rows), type=pa.string()))
     partitions = defaultdict(list)
     for i, row in enumerate(rows):
         partitions[row['arch'], row['language']].append(i)

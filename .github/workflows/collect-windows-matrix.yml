@@ -1,0 +1,56 @@
+name: collect-windows-compiler-matrix
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  collect:
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        include:
+          - {arch: x86_64, vcarch: amd64, family: msvc, profiles: 'O0 O2 Osize-msvc O2-noinline'}
+          - {arch: x86, vcarch: x86, family: msvc, profiles: 'O0 O2 Osize-msvc O2-noinline'}
+          - {arch: aarch64, vcarch: arm64, family: msvc, profiles: 'O0 O2 Osize-msvc O2-noinline'}
+          - {arch: x86_64, vcarch: amd64, family: clang-cl, profiles: 'O0 O1 O2 O3 Os Oz O2-noinline'}
+          - {arch: x86, vcarch: x86, family: clang-cl, profiles: 'O0 O1 O2 O3 Os Oz O2-noinline'}
+          - {arch: aarch64, vcarch: arm64, family: clang-cl, profiles: 'O0 O1 O2 O3 Os Oz O2-noinline'}
+    runs-on: windows-2022
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Select MSVC target and installed LLVM tools
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $installation = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          $devcmd = Join-Path $installation 'Common7\Tools\VsDevCmd.bat'
+          cmd /s /c "`"$devcmd`" -no_logo -arch=${{ matrix.vcarch }} -host_arch=amd64 && set" | ForEach-Object {
+            if ($_ -match '^([^=]+)=(.*)$') {
+              $name = $matches[1]; $value = $matches[2]
+              if ($name -match '^(PATH|INCLUDE|LIB|LIBPATH|VCToolsVersion|WindowsSDKVersion|VSCMD_ARG_TGT_ARCH|VSCMD_ARG_HOST_ARCH|VCINSTALLDIR|VSINSTALLDIR|UCRTVersion|WindowsSdkDir|WindowsSDKLibVersion|DevEnvDir)$') {
+                "$name=$value" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+              }
+            }
+          }
+          $llvm = 'C:\Program Files\LLVM\bin'
+          if (Test-Path (Join-Path $llvm 'clang-cl.exe')) { $llvm | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append }
+      - name: Collect original projects and preserve build attempts
+        shell: pwsh
+        run: python scripts/collect_windows_matrix.py --config configs/native-projects.json --family ${{ matrix.family }} --profiles ${{ matrix.profiles }} --arch ${{ matrix.arch }} --output corpus/native-windows-${{ matrix.family }}-${{ matrix.arch }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-${{ matrix.family }}-${{ matrix.arch }}-${{ github.run_id }}
+          path: |
+            corpus/native-windows-*/attempts.jsonl
+            corpus/native-windows-*/builds/
+            corpus/native-windows-*/sources/*.tar
+          if-no-files-found: warn
+          retention-days: 30

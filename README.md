@@ -53,8 +53,11 @@ No Hugging Face upload is performed by default. Upload support will remain dry-r
 
 See [the detailed contract](docs/COLLECTION_CONTRACT.md) for OS/ABI/ISA/SDK,
 compiler/linker version, full ordered options and language-specific provenance.
-The nine-language matrix is a planning policy; executable adapters are currently
-implemented for native C/C++, the dedicated Go clean/garble pilot, and offline Docker Rust CLI builds. No scores or function qualification yet.
+The nine-language matrix is a planning policy. Bounded raw collectors now cover all
+nine listed languages; target and compiler coverage remains uneven. See the
+[ARMv7/RISC-V64 campaign](docs/CROSS_ISA_REPORT.md) and
+[qualification design](docs/QUALIFICATION_DESIGN.md). No scores or function
+qualification are claimed yet.
 
 ```bash
 python3 -m venv .venv

@@ -59,6 +59,26 @@ class CatalogViewsTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             normalize(row, 'rust/c/data/a.parquet', 0, 'r', 's')
 
+    def test_compiler_dimensions_use_evidence_and_target_not_host(self):
+        row = self.row()
+        row['arch'] = 'armv7'
+        row['manifest_json'] = json.dumps({'target':{'arch':'armv7','triple':'arm-linux-gnueabihf','isa_mode':'thumb'},
+            'toolchain':{'family':'clang','driver':{'stdout':'Ubuntu clang version 18.1.3\n'}}})
+        result = normalize(row, 'native/c/data/attempts.parquet', 0, 'r', 's')
+        self.assertEqual((result['arch'],result['isa_mode'],result['compiler_family'],result['compiler_version']),
+                         ('armv7','thumb','clang','18.1.3'))
+        self.assertIsNone(result['stdlib_family'])
+        self.assertIsNone(result['libc_family'])
+
+    def test_riscv_and_arm_have_distinct_architecture_configs(self):
+        first, second = self.row(), self.row()
+        first['arch'], second['arch'] = 'armv7', 'riscv64'
+        rows = [normalize(first, 'native/c/data/attempts.parquet', 0, 'r', 's'),
+                normalize(second, 'native/c/data/attempts.parquet', 1, 'r', 's')]
+        specs = dict(config_specs(rows))
+        self.assertEqual(specs['architecture_riscv64'], 'views/data/riscv64/*.parquet')
+        self.assertEqual(specs['architecture_armv7'], 'views/data/armv7/*.parquet')
+
 
 if __name__ == '__main__':
     unittest.main()
