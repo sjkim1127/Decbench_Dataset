@@ -48,6 +48,16 @@ For payload downloads pass `revision=row["source_dataset_revision"]` and
 `artifact_index_repo_path` records tar member names and SHA-256 values. Verify
 those hashes before consuming extracted files.
 
+## 2026-10-28 snapshot
+
+The current index draws from source revision
+`9b1c68bd308ccf9473a069a446e77b04a92c6383`: 1,470 metadata rows representing
+1,478 physical attempts (1,454 successful, 24 failed). Target architecture row
+counts are AArch64 362, ARMv7 408, RISC-V64 204, x86 180 and x86-64 316. The
+counts include both replay attempts and are not unique functions or binaries.
+The index adds 396 PDB association evidence rows and 113 source-mapping pilot
+rows in separate configurations. All mapping candidates remain unqualified.
+
 ## Initial 2026-10-25 snapshot
 
 The first view snapshot uses original data revision
