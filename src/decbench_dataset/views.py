@@ -122,7 +122,8 @@ def normalize(row, metadata_path, row_number, repo, revision):
         scope = 'single-translation-unit'
     dimensions = tool_dimensions(row, manifest)
     explicit_targets = [arg.split('=',1)[1] for command in manifest.get('commands', [])
-                        for arg in command.get('argv', []) if isinstance(arg,str) and arg.startswith('--target=')]
+                        for arg in (command.get('argv', []) if isinstance(command, dict) else command if isinstance(command, list) else [])
+                        if isinstance(arg,str) and arg.startswith('--target=')]
     dimensions['compiler_target'] = (dimensions['compiler_target'] or target.get('triple') or
                                      row.get('target_triple') or (explicit_targets[0] if explicit_targets else None))
     return {
