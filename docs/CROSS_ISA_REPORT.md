@@ -45,9 +45,11 @@ independent boundaries, inlining/folding and semantic checks remain open.
 The Windows campaign ran separately in GitHub Actions run 40620095669. MSVC
 19.44.35229 and clang-cl 20.1.8 each target x86, x86-64 and ARM64: 144 MSVC and
 252 clang-cl attempts succeeded, across 198 variants. Each build has a PE DLL,
-PDB and `llvm-objcopy --strip-debug` DLL; PE headers were checked. A successful
-strip command and a PDB do not verify PDB GUID/age, removed debug information,
-or equivalence of every executable section. MSVC `/O1` is labeled `Osize-msvc`
+PDB and `llvm-objcopy --strip-debug` DLL. An independent LLVM PDB check matched
+the original PE CodeView GUID and age in all 396 cases. The `.text` bytes within
+the declared virtual size match in all 396 pairs; 394 pairs differ in the raw
+section padding. CodeView information remains in all 396 stripped DLLs, so they
+are not fully stripped and other sections were not compared. MSVC `/O1` is labeled `Osize-msvc`
 because it is a size profile and is not equivalent to Clang/GCC `-O1`. clang-cl
 has O0/O1/O2/O3/Os/Oz and O2-noinline; MSVC has O0/O2/Osize-msvc/O2-noinline.
 

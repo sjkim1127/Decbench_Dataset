@@ -51,6 +51,15 @@ def tool_dimensions(row, manifest):
         linker_version = correction.get('stdout') if correction.get('returncode') == 0 else None
     linker_path = linker.get('requested_executable') or linker.get('path') if isinstance(linker, dict) else None
     linker_family = 'lld' if linker_path and 'lld' in linker_path else ('gnu-ld' if linker_path and linker_path.endswith('-ld') else None)
+    if not linker_family:
+        companion = (toolchain.get('companions') or {}).get('link') or tools.get('ld') or {}
+        info = companion.get('version') or {}
+        if isinstance(info, dict):
+            observed = (info.get('stdout') or info.get('stderr') or '').strip()
+            if 'Microsoft' in observed and 'Linker' in observed:
+                linker_family, linker_version = 'msvc-link', observed.splitlines()[0]
+            elif 'GNU ld' in observed:
+                linker_family, linker_version = 'gnu-ld', observed.splitlines()[0]
     return {'compiler_family':family, 'compiler_version':match.group(1) if match else None,
             'compiler_version_raw':version, 'compiler_target':row.get('compiler_target'),
             'linker_family':row.get('linker_family') or linker_family,
@@ -112,7 +121,10 @@ def normalize(row, metadata_path, row_number, repo, revision):
     if scope is None and source.get('source_file') and row['schema_version'].startswith(('native-', 'cross-isa-')):
         scope = 'single-translation-unit'
     dimensions = tool_dimensions(row, manifest)
-    dimensions['compiler_target'] = dimensions['compiler_target'] or target.get('triple') or row.get('target_triple')
+    explicit_targets = [arg.split('=',1)[1] for command in manifest.get('commands', [])
+                        for arg in command.get('argv', []) if isinstance(arg,str) and arg.startswith('--target=')]
+    dimensions['compiler_target'] = (dimensions['compiler_target'] or target.get('triple') or
+                                     row.get('target_triple') or (explicit_targets[0] if explicit_targets else None))
     return {
         'catalog_schema_version': '1.0.0',
         'record_id': hashlib.sha256(f'{repo}@{revision}:{location}'.encode()).hexdigest(),
