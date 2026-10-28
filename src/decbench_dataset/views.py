@@ -204,9 +204,9 @@ def update_card(card, specs, revision, *, windows_pdb_evidence=False, qualificat
     for name, pattern in specs:
         header = header.rstrip() + f'\n- config_name: {name}\n  data_files:\n  - split: raw\n    path: {pattern}\n'
     if windows_pdb_evidence:
-        header = header.rstrip() + '\n- config_name: windows_pdb_evidence\n  data_files:\n  - split: raw\n    path: evidence/windows-pdb-2026-10-28/windows-pdb-verification.jsonl\n'
+        header = header.rstrip() + '\n- config_name: windows_pdb_evidence\n  data_files:\n  - split: raw\n    path: views/evidence/windows-pdb-verification.parquet\n'
     if qualification_pilot:
-        header = header.rstrip() + '\n- config_name: qualification_candidates_cjson\n  data_files:\n  - split: raw\n    path: native/cross-isa-2026-10-28/qualification-pilot/function-candidates.jsonl\n'
+        header = header.rstrip() + '\n- config_name: qualification_candidates_cjson\n  data_files:\n  - split: raw\n    path: views/evidence/qualification-candidates-cjson.parquet\n'
     body = re.sub(r'\n## Architecture and language views\n.*?(?=\n## |\Z)', '', parts[2], flags=re.S)
     body = re.sub(r'\n## ARMv7 and RISC-V64 raw campaign\n.*?(?=\n## |\Z)', '', body, flags=re.S)
     body = re.sub(r'\n## Windows PE and PDB verification\n.*?(?=\n## |\Z)', '', body, flags=re.S)
@@ -278,6 +278,7 @@ its `llvm-objcopy --strip-debug` copy; 394 raw section byte ranges differ in
 padding. All 396 stripped copies retain CodeView metadata and are not fully
 stripped. These checks do not validate other sections or source/function mapping.
 See `evidence/windows-pdb-2026-10-28/` for per-binary hashes and results.
-The `windows_pdb_evidence` config exposes those records as a raw JSONL dataset.
+The `windows_pdb_evidence` config exposes those records as a raw Parquet dataset;
+the original evidence JSONL is preserved at the path above.
 '''
     return '---' + header + '---' + body

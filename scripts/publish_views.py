@@ -83,6 +83,23 @@ def main():
         path = views / 'data' / arch / (lang + '.parquet')
         path.parent.mkdir(parents=True, exist_ok=True)
         pq.write_table(table.take(pa.array(indices)), path, compression='zstd')
+    # A Hub repository with Parquet build configs uses the Parquet loader for
+    # every config; retain original JSONL while exposing compatible views.
+    evidence_sources = {
+        'evidence/windows-pdb-2026-10-28/windows-pdb-verification.jsonl':'windows-pdb-verification.parquet',
+        'native/cross-isa-2026-10-28/qualification-pilot/function-candidates.jsonl':'qualification-candidates-cjson.parquet',
+    }
+    for source, filename in evidence_sources.items():
+        if source not in files:
+            continue
+        local = fetch(source)
+        records = [json.loads(line) for line in local.read_text().splitlines()]
+        output = views/'evidence'/filename
+        output.parent.mkdir(exist_ok=True)
+        pq.write_table(pa.Table.from_pylist(records), output, compression='zstd')
+        if pq.read_table(output).to_pylist() != records:
+            raise ValueError('Evidence Parquet round-trip changed records: ' + source)
+        inputs.append({'path':source,'sha256':sha(local),'records':len(records)})
     # Verify full row retention and schema equality after physical partitioning.
     recovered = []
     for path in sorted((views / 'data').rglob('*.parquet')):

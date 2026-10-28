@@ -88,6 +88,8 @@ class CatalogViewsTests(unittest.TestCase):
         specs = config_specs([result])
         updated = update_card(card, specs, 's', windows_pdb_evidence=True, qualification_pilot=True)
         self.assertEqual(update_card(updated, specs, 's', windows_pdb_evidence=True, qualification_pilot=True), updated)
+        self.assertIn('views/evidence/windows-pdb-verification.parquet', updated)
+        self.assertIn('views/evidence/qualification-candidates-cjson.parquet', updated)
 
     def test_project_revision_ids_are_stable_but_family_is_not_guessed(self):
         a, ar = project_identity('https://github.com/Example/Project.git', 'a'*40)
