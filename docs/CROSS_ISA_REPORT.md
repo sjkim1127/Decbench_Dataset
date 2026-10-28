@@ -42,7 +42,19 @@ candidates, 3 unassessed records, and **0 qualified functions**. The source AST 
 parsed with a different host Clang and is not proof of original preprocessing;
 independent boundaries, inlining/folding and semantic checks remain open.
 
-`collect-windows-matrix.yml` separately collects MSVC and clang-cl. MSVC `/O1`
-is labeled `Osize-msvc` because it is a size profile and is not equivalent to
-Clang/GCC `-O1`. Treat its job/artifact status as measured independently; this
-report does not claim Windows results before that workflow completes.
+The Windows campaign ran separately in GitHub Actions run 40620095669. MSVC
+19.44.35229 and clang-cl 20.1.8 each target x86, x86-64 and ARM64: 144 MSVC and
+252 clang-cl attempts succeeded, across 198 variants. Each build has a PE DLL,
+PDB and `llvm-objcopy --strip-debug` DLL; PE headers were checked. A successful
+strip command and a PDB do not verify PDB GUID/age, removed debug information,
+or equivalence of every executable section. MSVC `/O1` is labeled `Osize-msvc`
+because it is a size profile and is not equivalent to Clang/GCC `-O1`. clang-cl
+has O0/O1/O2/O3/Os/Oz and O2-noinline; MSVC has O0/O2/Osize-msvc/O2-noinline.
+
+The original `richgel999/bc7enc_rdo` CMake executable adds a whole-project C++
+case with nine translation units on Linux AArch64. O2 and O2-LTO were each built
+twice; all four succeeded, and debuglink CRC and stripped `.text` were checked.
+The first four attempts failed because upstream `ert.h` uses standard integer
+types without including the corresponding header. The successful recipe supplies
+`-include cstdint` as a recorded compiler flag; original source remains unchanged.
+Initial failure manifests and diagnostics are retained in the package history.
