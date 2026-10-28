@@ -71,7 +71,7 @@ def main():
     table = pa.Table.from_pylist(rows)
     # An all-unknown field must still have a stable queryable string schema.
     for name in ('compiler_family','compiler_version','compiler_version_raw','compiler_target',
-                 'linker_family','linker_version','stdlib_family','stdlib_version','libc_family','isa_mode'):
+                 'linker_family','linker_version','stdlib_family','stdlib_version','libc_family','isa_mode','build_scope'):
         i = table.schema.get_field_index(name)
         if pa.types.is_null(table.schema.field(i).type):
             table = table.set_column(i, name, pa.nulls(len(rows), type=pa.string()))

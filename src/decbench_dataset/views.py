@@ -105,6 +105,12 @@ def normalize(row, metadata_path, row_number, repo, revision):
     profile = row.get('profile')
     if isinstance(profile, dict):
         profile = profile.get('id')
+    scope = manifest.get('build_scope')
+    if scope is None and isinstance(manifest.get('profile'), dict):
+        if manifest['profile'].get('kind') == 'shared-library-translation-unit':
+            scope = 'single-translation-unit'
+    if scope is None and source.get('source_file') and row['schema_version'].startswith(('native-', 'cross-isa-')):
+        scope = 'single-translation-unit'
     dimensions = tool_dimensions(row, manifest)
     dimensions['compiler_target'] = dimensions['compiler_target'] or target.get('triple') or row.get('target_triple')
     return {
@@ -116,7 +122,7 @@ def normalize(row, metadata_path, row_number, repo, revision):
         'abi': row.get('abi') or target.get('abi'),
         'target_triple': row.get('target_triple') or target.get('triple'),
         'profile': profile, 'track': row.get('track'), 'status': status,
-        'isa_mode':target.get('isa_mode'), **dimensions,
+        'isa_mode':target.get('isa_mode'), 'build_scope':scope, **dimensions,
         'qualified': False, 'row_grain': 'build-with-replays' if is_pilot else 'build-attempt',
         'attempt': row.get('attempt'), 'physical_attempt_count': len(replay_paths) if is_pilot else 1,
         'source_repository': row.get('source_repository') or source.get('repository_url')
@@ -191,7 +197,7 @@ def update_card(card, specs, revision):
 Choose `all_records`, an architecture config ({architectures}), or a `language_` config (`c`, `cpp`, `rust`, `go`,
 `zig`, `swift`, `fortran`, `d`, `nim`). Every config uses split `raw`.
 For example: `load_dataset("sjkim1127/decbench-multilang-corpus", "architecture_aarch64", split="raw")`.
-Filter columns `language`, `arch`, `isa_mode`, `os`, `format`, `abi`, `profile`, `status`, `compiler_family`, `compiler_version`, `compiler_target`, `linker_family`
+Filter columns `language`, `arch`, `isa_mode`, `os`, `format`, `abi`, `profile`, `build_scope`, `status`, `compiler_family`, `compiler_version`, `compiler_target`, `linker_family`
 to select intersections. `aarch64` is the canonical ARM64 spelling.
 
 These views reference existing payloads without duplicating binaries. Original
