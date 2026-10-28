@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/sjkim1127/Decbench_Dataset/schemas/qualification-record.schema.json",
+  "title": "Source to binary function mapping evidence",
+  "type": "object",
+  "required": ["schema_version", "binary_sha256", "debug_sha256", "source_commit", "source_function_id", "binary_function_va", "binary_function_size", "source_path", "source_line_start", "source_line_end", "inlined", "outlined", "compiler_generated", "mapping_method", "mapping_evidence", "oracle_status", "oracle_confidence", "qualification_reason", "qualified", "eligibility_gates"],
+  "properties": {
+    "schema_version": {"const": "qualification-0.1.0"},
+    "binary_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "debug_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "source_commit": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+    "source_function_id": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "binary_function_va": {"type": ["integer", "null"], "minimum": 0},
+    "binary_function_size": {"type": ["integer", "null"], "minimum": 1},
+    "address_kind": {"const": "elf-linked-va"},
+    "source_path": {"type": ["string", "null"]},
+    "source_line_start": {"type": ["integer", "null"], "minimum": 1},
+    "source_line_end": {"type": ["integer", "null"], "minimum": 1},
+    "inlined": {"type": ["boolean", "null"]},
+    "outlined": {"type": ["boolean", "null"]},
+    "compiler_generated": {"type": ["boolean", "null"]},
+    "mapping_method": {"type": "string"},
+    "mapping_evidence": {"type": "object"},
+    "oracle_status": {"enum": ["unassessed", "candidate", "rejected", "qualified"]},
+    "oracle_confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "qualification_reason": {"type": "string", "minLength": 1},
+    "qualified": {"type": "boolean"},
+    "eligibility_gates": {
+      "type": "object",
+      "required": ["debug_association_verified", "source_body_extracted", "boundary_independently_verified", "unique_mapping_verified", "transformations_reviewed", "semantic_oracle_verified"],
+      "properties": {
+        "debug_association_verified": {"type": "boolean"},
+        "source_body_extracted": {"type": "boolean"},
+        "boundary_independently_verified": {"type": "boolean"},
+        "unique_mapping_verified": {"type": "boolean"},
+        "transformations_reviewed": {"type": "boolean"},
+        "semantic_oracle_verified": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "allOf": [
+    {"if": {"properties": {"qualified": {"const": true}}, "required": ["qualified"]},
+     "then": {"properties": {"oracle_status": {"const": "qualified"}, "oracle_confidence": {"type": "number"}, "source_function_id": {"type": "string"}, "binary_function_va": {"type": "integer"}, "binary_function_size": {"type": "integer"}, "source_path": {"type": "string"}, "source_line_start": {"type": "integer"}, "source_line_end": {"type": "integer"}, "inlined": {"type": "boolean"}, "outlined": {"type": "boolean"}, "compiler_generated": {"type": "boolean"}, "eligibility_gates": {"properties": {"debug_association_verified": {"const": true}, "source_body_extracted": {"const": true}, "boundary_independently_verified": {"const": true}, "unique_mapping_verified": {"const": true}, "transformations_reviewed": {"const": true}, "semantic_oracle_verified": {"const": true}}}}}},
+    {"if": {"properties": {"oracle_status": {"const": "qualified"}}, "required": ["oracle_status"]}, "then": {"properties": {"qualified": {"const": true}}}}
+  ],
+  "additionalProperties": true
+}

@@ -72,13 +72,22 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="decbench-dataset")
     sub = parser.add_subparsers(dest="command", required=True)
 
+    coverage = sub.add_parser('plan-coverage', help='allocate a distinct-build budget over OS/format/architecture cells')
+    coverage.add_argument('policy')
+    coverage.add_argument('--budget', type=int, required=True)
+    def show_coverage(args):
+        from .coverage import target_quotas
+        print(json.dumps(target_quotas(load_json(args.policy), args.budget), indent=2))
+        return 0
+    coverage.set_defaults(func=show_coverage)
+
     validate = sub.add_parser("validate-matrix", help="validate matrix structure and toolchain references")
     validate.add_argument("matrix")
     validate.set_defaults(func=cmd_validate_matrix)
 
     expand = sub.add_parser("expand-matrix", help="emit deterministic abstract build variants as JSONL")
     expand.add_argument("matrix")
-    expand.add_argument("--language", choices=["c", "cpp", "rust", "go", "zig"])
+    expand.add_argument("--language", choices=["c", "cpp", "rust", "go", "zig", "swift", "fortran", "d", "nim"])
     expand.add_argument("--include-secondary", action="store_true")
     expand.add_argument("--limit", type=int)
     expand.set_defaults(func=cmd_expand_matrix)

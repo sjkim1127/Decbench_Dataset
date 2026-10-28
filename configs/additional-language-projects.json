@@ -1,0 +1,97 @@
+{
+  "schema_version": "source-policy-0.1.0",
+  "projects": [
+    {
+      "language": "swift",
+      "repository": "yonaskolb/Mint",
+      "repository_url": "https://github.com/yonaskolb/Mint.git",
+      "commit_sha": "3ee0f63e6be99cb655a1c567d283aa51a294ffc5",
+      "selected_ref": "3ee0f63e6be99cb655a1c567d283aa51a294ffc5",
+      "license_file": "LICENSE",
+      "license_sha256": "1810bb02e9c8e887396d5960370274aebdd94d8129f3ba4f466a0e0a7c4dbfbc",
+      "license_spdx": "MIT",
+      "upstream_entrypoint": "Package.swift",
+      "product": "mint",
+      "source_origin": "upstream-open-source",
+      "dataset_authored_program_source": false,
+      "collector_supplied_harness": false
+    },
+    {
+      "language": "zig",
+      "repository": "zigtools/zls",
+      "repository_url": "https://github.com/zigtools/zls.git",
+      "commit_sha": "ce6c8f02c78e622421cfc2405c67c5222819ec03",
+      "selected_ref": "0.15.0",
+      "license_file": "LICENSE",
+      "license_sha256": "e0ef11f84a052c6a36c838a920dd0d852222b78e34c95bfc45ac7867de1a13ee",
+      "license_spdx": "MIT",
+      "upstream_entrypoint": "build.zig",
+      "product": "zls",
+      "source_origin": "upstream-open-source",
+      "dataset_authored_program_source": false,
+      "collector_supplied_harness": false
+    },
+    {
+      "language": "fortran",
+      "repository": "jacobwilliams/json-fortran",
+      "repository_url": "https://github.com/jacobwilliams/json-fortran.git",
+      "commit_sha": "d9ed2e4ee53745f4ed98d7536e17bee5198aa3b0",
+      "selected_ref": "d9ed2e4ee53745f4ed98d7536e17bee5198aa3b0",
+      "license_file": "LICENSE",
+      "license_sha256": "4a45bea218be842b44b74f86cfa108e0d4fa43f3c795f54c259c7d6436a50b80",
+      "license_spdx": "BSD-3-Clause",
+      "upstream_entrypoint": "CMakeLists.txt",
+      "product": "jsonfortran",
+      "source_origin": "upstream-open-source",
+      "dataset_authored_program_source": false,
+      "collector_supplied_harness": false
+    },
+    {
+      "language": "d",
+      "repository": "CyberShadow/DustMite",
+      "repository_url": "https://github.com/CyberShadow/DustMite.git",
+      "commit_sha": "ab68756bab23e09328a9b906f7c7b44bfa7bae25",
+      "selected_ref": "master",
+      "license_file": "LICENSE_1_0.txt",
+      "license_sha256": "c9bff75738922193e67fa726fa225535870d2aa1059f91452c411736284ad566",
+      "license_spdx": "BSL-1.0",
+      "upstream_entrypoint": "dustmite.d",
+      "product": "dustmite",
+      "source_origin": "upstream-open-source",
+      "dataset_authored_program_source": false,
+      "collector_supplied_harness": false
+    },
+    {
+      "language": "nim",
+      "repository": "nim-lang/nimble",
+      "repository_url": "https://github.com/nim-lang/nimble.git",
+      "commit_sha": "3575fd54a890d910ace56678aa74b4237d604175",
+      "selected_ref": "v0.14.2",
+      "license_file": "license.txt",
+      "license_sha256": "c8c765a71a7f2d96defd9ace46fef04631420491cd459a5b9ec52d38a82b0964",
+      "license_spdx": "BSD-3-Clause",
+      "upstream_entrypoint": "src/nimble.nim",
+      "product": "nimble",
+      "source_origin": "upstream-open-source",
+      "dataset_authored_program_source": false,
+      "collector_supplied_harness": false
+    }
+  ],
+  "dependencies": [
+    {
+      "language": "nim",
+      "repository": "nim-lang/Nim",
+      "repository_url": "https://github.com/nim-lang/Nim.git",
+      "commit_sha": "71ba2e7f3c5815d956b1ae0341b0743242b8fec6",
+      "selected_ref": "v1.6.14",
+      "license_file": "copying.txt",
+      "license_sha256": "80c66b05d5266e968bf98ed81a2df0cca5b50ce94611919f95c501945d40bd76",
+      "license_spdx": "MIT",
+      "upstream_entrypoint": "compiler/nimblecmd.nim",
+      "source_origin": "upstream-open-source",
+      "dataset_authored_program_source": false,
+      "collector_supplied_harness": false,
+      "role": "compiler-source-dependency-not-corpus-project"
+    }
+  ]
+}

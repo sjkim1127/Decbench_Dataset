@@ -59,12 +59,7 @@ def _job_id(source: ProjectSource, variant: Variant, toolchain: dict[str, Any]) 
         "commit_sha": source.commit_sha,
         "tree_hash": source.tree_hash,
         "variant_id": variant.variant_id,
-        "toolchain": {
-            "version_raw": version_raw,
-            "build_identity": toolchain.get("build_identity"),
-            "executable_sha256": toolchain.get("executable_sha256"),
-            "image_digest": toolchain.get("container_image_digest"),
-        },
+        "toolchain": toolchain,
     }
     payload = json.dumps(canonical, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
     return hashlib.sha256(payload).hexdigest()

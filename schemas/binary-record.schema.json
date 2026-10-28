@@ -11,7 +11,7 @@
     "schema_version": {"type": "string"},
     "binary_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
     "build_id": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
-    "language": {"enum": ["c", "cpp", "rust", "go", "zig"]},
+    "language": {"enum": ["c", "cpp", "rust", "go", "zig", "swift", "fortran", "d", "nim"]},
     "format": {"enum": ["elf", "pe", "macho"]},
     "arch": {"type": "string"},
     "endianness": {"enum": ["little", "big", "unknown"]},

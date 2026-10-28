@@ -1,0 +1,83 @@
+{
+  "schema_version": "native-0.3.0",
+  "projects": [
+    {
+      "id": "tidwall-hashmap-c",
+      "repository_url": "https://github.com/tidwall/hashmap.c.git",
+      "commit_sha": "3735986914fc1c4e6a9123b406d0970666aa4aec",
+      "language": "c",
+      "source_file": "hashmap.c",
+      "standard": "c99",
+      "license_file": "LICENSE",
+      "license_sha256": "f61e7bc66f7caf8c9690fb59a10b4fa55e28ac1ea075273c4560e0558d3d4fda",
+      "license_spdx": "MIT",
+      "license_review": "reviewed-direct-library-source-retain-upstream-notices",
+      "source_snapshot_license_scope": "per-file-upstream-licenses-retained"
+    },
+    {
+      "id": "tidwall-btree-c",
+      "repository_url": "https://github.com/tidwall/btree.c.git",
+      "commit_sha": "48634e841e32c7c1e91d5319002bab4f5f8842f0",
+      "language": "c",
+      "source_file": "btree.c",
+      "standard": "c99",
+      "license_file": "LICENSE",
+      "license_sha256": "f61e7bc66f7caf8c9690fb59a10b4fa55e28ac1ea075273c4560e0558d3d4fda",
+      "license_spdx": "MIT",
+      "license_review": "reviewed-direct-library-source-retain-upstream-notices",
+      "source_snapshot_license_scope": "per-file-upstream-licenses-retained"
+    },
+    {
+      "id": "tidwall-json-c",
+      "repository_url": "https://github.com/tidwall/json.c.git",
+      "commit_sha": "104d8cbf5d09ceba37d469574cbf5696349bcaf1",
+      "language": "c",
+      "source_file": "json.c",
+      "standard": "c99",
+      "license_file": "LICENSE",
+      "license_sha256": "6f24b341ab0c9ffc7aa3b83b0fb13025141455f9092a5b46b8564c4f3f05eba1",
+      "license_spdx": "MIT",
+      "license_review": "reviewed-direct-library-source-retain-upstream-notices",
+      "source_snapshot_license_scope": "per-file-upstream-licenses-retained"
+    },
+    {
+      "id": "antirez-sds",
+      "repository_url": "https://github.com/antirez/sds.git",
+      "commit_sha": "5347739b1581fcba74fd5cab1fc21d2aef317d71",
+      "language": "c",
+      "source_file": "sds.c",
+      "standard": "c99",
+      "license_file": "LICENSE",
+      "license_sha256": "bb0d0d505009fdf584b0f44dbb62562eebada497d53d726cd2e940ada512dc16",
+      "license_spdx": "BSD-2-Clause",
+      "license_review": "reviewed-direct-library-source-retain-upstream-notices",
+      "source_snapshot_license_scope": "per-file-upstream-licenses-retained"
+    },
+    {
+      "id": "udp-json-parser",
+      "repository_url": "https://github.com/json-parser/json-parser.git",
+      "commit_sha": "9d50ae5ea2cdeef3b75146c621ec7b26e2e3642f",
+      "language": "c",
+      "source_file": "json.c",
+      "standard": "c99",
+      "license_file": "LICENSE",
+      "license_sha256": "298d84f63ba08c3c4b2939d4ddad815741c4905fbe3544505cda0f3b2b0759bb",
+      "license_spdx": "BSD-2-Clause",
+      "license_review": "reviewed-direct-library-source-retain-upstream-notices",
+      "source_snapshot_license_scope": "per-file-upstream-licenses-retained"
+    },
+    {
+      "id": "richgel999-bc7enc_rdo",
+      "repository_url": "https://github.com/richgel999/bc7enc_rdo.git",
+      "commit_sha": "b9438627eef73a1157e84201b6fa6eb2ffd6d9f0",
+      "language": "cpp",
+      "source_file": "bc7enc.cpp",
+      "standard": "c++11",
+      "license_file": "LICENSE",
+      "license_sha256": "b3e843763e8d3bdeb0f469ecd4107fc32b5fa27ebee1af10d2066bc339292800",
+      "license_spdx": "MIT OR Unlicense",
+      "license_review": "reviewed-direct-library-source-retain-upstream-notices",
+      "source_snapshot_license_scope": "per-file-upstream-licenses-retained"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "schema_version": "0.3.0",
+  "tracks": [
+    {"id": "llvm-passes", "tools": ["obfuscator-llvm/obfuscator", "open-obfuscator/o-mvll", "DreamSoule/ollvm17"], "status": "candidate-needs-toolchain-license-and-capability-review", "transforms": ["control-flow-flattening", "instruction-substitution", "bogus-control-flow", "string-transform"]},
+    {"id": "go-garble", "tools": ["burrowers/garble"], "status": "candidate-needs-version-pinned-build-pilot", "transforms": ["identifiers", "literals"]}
+  ],
+  "required_fields": ["original_source_snapshot_sha256", "baseline_build_id", "tool_repository", "tool_commit", "tool_executable_sha256", "compiler_identity", "ordered_pass_pipeline", "argv", "configuration_artifacts", "random_seed", "debug_mapping_status", "semantic_validation_status", "split_group"],
+  "rules": [
+    "Retain original source and clean baseline; transformed source/IR is an additional artifact where available.",
+    "Record stripped, packed, optimized and obfuscated as distinct attributes.",
+    "Never claim semantic equivalence from a successful compiler exit code.",
+    "Tools that intentionally remove debug mappings remain raw with explicit unavailable ground truth.",
+    "Archived, unlicensed or noncommercial-only tools require explicit review before campaign admission.",
+    "No corpus-produced code is executed by generation; semantic validation is a separate future qualification stage."
+  ]
+}
