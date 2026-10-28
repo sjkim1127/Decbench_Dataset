@@ -1,9 +1,15 @@
 name: collect-native-formats
 on:
   workflow_dispatch:
+    inputs:
+      campaign:
+        description: 'Select the native acquisition campaign'
+        type: choice
+        options: [standard, windows]
+        default: standard
   push:
     branches: ['codex/corpus-platform-expansion']
-    paths: ['.github/workflows/collect-native.yml', 'scripts/collect_native.py', 'configs/native-projects.json', 'configs/native-projects-batch2.json']
+    paths: ['scripts/collect_native.py', 'configs/native-projects.json', 'configs/native-projects-batch2.json']
 permissions:
   contents: read
 concurrency:
@@ -11,6 +17,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   collect:
+    if: ${{ inputs.campaign != 'windows' }}
     strategy:
       fail-fast: false
       max-parallel: 4
@@ -58,3 +65,6 @@ jobs:
             corpus/native-*/builds/
             corpus/native-*/sources/*.tar
           retention-days: 30
+  windows-matrix:
+    if: ${{ inputs.campaign == 'windows' }}
+    uses: ./.github/workflows/collect-windows-matrix.yml

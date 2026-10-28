@@ -1,6 +1,7 @@
 name: collect-windows-compiler-matrix
 on:
   workflow_dispatch:
+  workflow_call:
 permissions:
   contents: read
 jobs:
