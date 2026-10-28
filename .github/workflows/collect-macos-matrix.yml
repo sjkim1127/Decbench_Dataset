@@ -1,0 +1,35 @@
+name: collect-macos-profile-matrix
+on:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  collect:
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - {arch: aarch64, runner: macos-15}
+          - {arch: x86_64, runner: macos-15}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Collect original upstream projects across clang profiles
+        run: python scripts/collect_macos_matrix.py --config configs/macos-matrix-projects.json --arch ${{ matrix.arch }} --output corpus/macos-matrix-${{ matrix.arch }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: macos-matrix-${{ matrix.arch }}-${{ github.run_id }}
+          path: |
+            corpus/macos-matrix-*/attempts.jsonl
+            corpus/macos-matrix-*/builds/
+            corpus/macos-matrix-*/sources/*.tar
+          if-no-files-found: warn
+          retention-days: 30

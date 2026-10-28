@@ -5,7 +5,7 @@ on:
       campaign:
         description: 'Select the native acquisition campaign'
         type: choice
-        options: [standard, windows]
+        options: [standard, windows, macos]
         default: standard
   push:
     branches: ['codex/corpus-platform-expansion']
@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   collect:
-    if: ${{ inputs.campaign != 'windows' }}
+    if: ${{ github.event_name == 'push' || inputs.campaign == 'standard' || inputs.campaign == '' }}
     strategy:
       fail-fast: false
       max-parallel: 4
@@ -68,3 +68,6 @@ jobs:
   windows-matrix:
     if: ${{ inputs.campaign == 'windows' }}
     uses: ./.github/workflows/collect-windows-matrix.yml
+  macos-matrix:
+    if: ${{ inputs.campaign == 'macos' }}
+    uses: ./.github/workflows/collect-macos-matrix.yml
