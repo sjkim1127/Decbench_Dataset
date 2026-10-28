@@ -71,7 +71,8 @@ def main():
     table = pa.Table.from_pylist(rows)
     # An all-unknown field must still have a stable queryable string schema.
     for name in ('compiler_family','compiler_version','compiler_version_raw','compiler_target',
-                 'linker_family','linker_version','stdlib_family','stdlib_version','libc_family','isa_mode','build_scope'):
+                 'linker_family','linker_version','stdlib_family','stdlib_version','libc_family','isa_mode','build_scope',
+                 'project_id','revision_id','family_id'):
         i = table.schema.get_field_index(name)
         if pa.types.is_null(table.schema.field(i).type):
             table = table.set_column(i, name, pa.nulls(len(rows), type=pa.string()))
@@ -96,7 +97,8 @@ def main():
     (views / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
     specs = config_specs(rows)
     card = update_card(fetch('README.md').read_text(), specs, revision,
-                       windows_pdb_evidence='evidence/windows-pdb-2026-10-28/summary.json' in files)
+                       windows_pdb_evidence='evidence/windows-pdb-2026-10-28/summary.json' in files,
+                       qualification_pilot='native/cross-isa-2026-10-28/qualification-pilot/function-candidates.jsonl' in files)
     (destination / 'README.md').write_text(card)
     (views / 'README.md').write_text('''# Architecture and language catalog
 

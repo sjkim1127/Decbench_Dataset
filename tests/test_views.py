@@ -2,7 +2,7 @@ import json
 import unittest
 
 from decbench_dataset.views import (config_specs, describe, metadata_file,
-                                   normalize, repository_path, update_card)
+                                   normalize, project_identity, repository_path, update_card)
 
 
 class CatalogViewsTests(unittest.TestCase):
@@ -86,8 +86,19 @@ class CatalogViewsTests(unittest.TestCase):
         self.assertEqual(result['compiler_target'], 'aarch64-pc-windows-msvc')
         card = '---\nconfigs:\n- config_name: builds\n  data_files:\n  - split: raw\n    path: data/*.parquet\n---\n# Corpus\n'
         specs = config_specs([result])
-        updated = update_card(card, specs, 's', windows_pdb_evidence=True)
-        self.assertEqual(update_card(updated, specs, 's', windows_pdb_evidence=True), updated)
+        updated = update_card(card, specs, 's', windows_pdb_evidence=True, qualification_pilot=True)
+        self.assertEqual(update_card(updated, specs, 's', windows_pdb_evidence=True, qualification_pilot=True), updated)
+
+    def test_project_revision_ids_are_stable_but_family_is_not_guessed(self):
+        a, ar = project_identity('https://github.com/Example/Project.git', 'a'*40)
+        b, br = project_identity('https://github.com/example/project', 'a'*40)
+        c, cr = project_identity('https://github.com/example/project', 'b'*40)
+        self.assertEqual((a, ar), (b, br))
+        self.assertEqual(a, c)
+        self.assertNotEqual(ar, cr)
+        row = normalize(self.row(), 'native/c/data/attempts.parquet', 0, 'r', 's')
+        self.assertIsNone(row['family_id'])
+        self.assertEqual(row['family_id_status'], 'unreviewed')
 
 
 if __name__ == '__main__':

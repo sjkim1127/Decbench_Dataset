@@ -20,11 +20,24 @@ Configs:
   `architecture_armv7`, `architecture_riscv64`
 - `language_c`, `language_cpp`, `language_rust`, `language_go`, `language_zig`,
   `language_swift`, `language_fortran`, `language_d`, `language_nim`
+- `qualification_candidates_cjson`: source/DWARF/symbol evidence, all unqualified
+- `windows_pdb_evidence`: PE/PDB GUID/age and `.text` comparison records
 
 Filter intersections using `arch`, `language`, `os`, `format`, `abi`, `profile`,
 `track`, and `status`. Canonical `aarch64` includes target names spelled `arm64`;
 target architecture is independent of host/runner architecture. A missing ABI or
 target triple stays null rather than being guessed from the OS.
+
+Additional queryable fields include compiler family, version, target, linker,
+`isa_mode` and `build_scope`. Unknown standard-library/libc values remain null.
+The supplementary PDB and qualification configs have different row schemas;
+they are evidence tables rather than build-attempt tables.
+
+`project_id` is a SHA-256 identity of the canonical repository URL and
+`revision_id` combines it with the exact source commit. `variant_group_id` and
+`replay_group_id` retain the original collector's build identity. These do not
+detect forks or shared upstream code: `family_id` is explicitly null/unreviewed
+until family relationships are researched. No train/test split is assigned.
 
 Every row retains its original metadata JSON and full manifest JSON, plus the
 original metadata path/row and immutable dataset revision. Compiler versions,

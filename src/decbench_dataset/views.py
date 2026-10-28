@@ -90,6 +90,19 @@ def repository_path(prefix, path):
     return '/'.join(x for x in (prefix, path) if x)
 
 
+def project_identity(repository, commit):
+    if not isinstance(repository, str) or not repository:
+        return None, None
+    canonical = repository.rstrip('/')
+    if canonical.endswith('.git'):
+        canonical = canonical[:-4]
+    if canonical.lower().startswith('https://github.com/'):
+        canonical = canonical.lower()
+    project = hashlib.sha256(('project-v1:' + canonical).encode()).hexdigest()
+    revision = hashlib.sha256(('revision-v1:' + project + ':' + commit).encode()).hexdigest() if commit else None
+    return project, revision
+
+
 def normalize(row, metadata_path, row_number, repo, revision):
     manifest = json.loads(row['manifest_json'])
     target = manifest.get('target', {})
@@ -126,6 +139,10 @@ def normalize(row, metadata_path, row_number, repo, revision):
                         if isinstance(arg,str) and arg.startswith('--target=')]
     dimensions['compiler_target'] = (dimensions['compiler_target'] or target.get('triple') or
                                      row.get('target_triple') or (explicit_targets[0] if explicit_targets else None))
+    repository = (row.get('source_repository') or source.get('repository_url') or
+                  manifest.get('repository_url') or row.get('split_group'))
+    source_commit = row.get('source_commit') or source.get('commit_sha') or manifest.get('commit_sha')
+    project_id, revision_id = project_identity(repository, source_commit)
     return {
         'catalog_schema_version': '1.0.0',
         'record_id': hashlib.sha256(f'{repo}@{revision}:{location}'.encode()).hexdigest(),
@@ -138,9 +155,9 @@ def normalize(row, metadata_path, row_number, repo, revision):
         'isa_mode':target.get('isa_mode'), 'build_scope':scope, **dimensions,
         'qualified': False, 'row_grain': 'build-with-replays' if is_pilot else 'build-attempt',
         'attempt': row.get('attempt'), 'physical_attempt_count': len(replay_paths) if is_pilot else 1,
-        'source_repository': row.get('source_repository') or source.get('repository_url')
-                             or manifest.get('repository_url') or row.get('split_group'),
-        'source_commit': row.get('source_commit') or source.get('commit_sha') or manifest.get('commit_sha'),
+        'source_repository':repository, 'source_commit':source_commit,
+        'project_id':project_id, 'revision_id':revision_id, 'family_id':None,
+        'family_id_status':'unreviewed', 'variant_group_id':row['build_id'], 'replay_group_id':row['build_id'],
         'source_dataset_repo': repo, 'source_dataset_revision': revision,
         'source_metadata_path': metadata_path, 'source_metadata_row': row_number,
         'campaign': prefix or 'pilot',
@@ -177,15 +194,19 @@ def config_specs(rows):
         for lang in sorted({r['language'] for r in rows})]
 
 
-def update_card(card, specs, revision, *, windows_pdb_evidence=False):
+def update_card(card, specs, revision, *, windows_pdb_evidence=False, qualification_pilot=False):
     parts = card.split('---', 2)
     if len(parts) != 3 or parts[0].strip() or 'configs:' not in parts[1]:
         raise ValueError('Unexpected dataset card front matter')
     import re
-    header = re.sub(r'- config_name: (?:all_records|architecture_\w+|language_\w+)\n'
+    header = re.sub(r'- config_name: (?:all_records|architecture_\w+|language_\w+|windows_pdb_evidence|qualification_candidates_cjson)\n'
                     r'.*?(?=- config_name:|\Z)', '', parts[1], flags=re.S)
     for name, pattern in specs:
         header = header.rstrip() + f'\n- config_name: {name}\n  data_files:\n  - split: raw\n    path: {pattern}\n'
+    if windows_pdb_evidence:
+        header = header.rstrip() + '\n- config_name: windows_pdb_evidence\n  data_files:\n  - split: raw\n    path: evidence/windows-pdb-2026-10-28/windows-pdb-verification.jsonl\n'
+    if qualification_pilot:
+        header = header.rstrip() + '\n- config_name: qualification_candidates_cjson\n  data_files:\n  - split: raw\n    path: native/cross-isa-2026-10-28/qualification-pilot/function-candidates.jsonl\n'
     body = re.sub(r'\n## Architecture and language views\n.*?(?=\n## |\Z)', '', parts[2], flags=re.S)
     body = re.sub(r'\n## ARMv7 and RISC-V64 raw campaign\n.*?(?=\n## |\Z)', '', body, flags=re.S)
     body = re.sub(r'\n## Windows PE and PDB verification\n.*?(?=\n## |\Z)', '', body, flags=re.S)
@@ -221,6 +242,9 @@ metadata is pinned to dataset revision `{revision}`. Use
 Full compiler/options/environment evidence remains in `manifest_json` and
 `original_metadata_json`. Missing tool, ABI, or triple values remain null;
 compiler/linker columns only report evidence actually captured.
+`project_id` and `revision_id` group the same repository/revision; `family_id`
+remains unreviewed/null because forks and related projects are not yet mapped.
+No train/test split has been assigned.
 
 Rows preserve original granularity: initial pilot rows contain two replays;
 other rows are individual attempts. Read `row_grain`, `attempt`, and
@@ -241,7 +265,8 @@ Each attempt includes original/stripped ELF, external debug, raw execve traces,
 normalized observed child argv, flags, toolchain/image identity and logs. GNU
 debuglink CRC and stripped `.text` equality are checked; none proves semantics.
 See `native/cross-isa-2026-10-28/summary.json`. Its qualification pilot contains
-source/DWARF/symbol candidates with zero qualified functions.
+source/DWARF/symbol candidates with zero qualified functions. When present,
+config `qualification_candidates_cjson` exposes the 113 unqualified pilot rows.
 '''
     if windows_pdb_evidence:
         body += '''
@@ -253,5 +278,6 @@ its `llvm-objcopy --strip-debug` copy; 394 raw section byte ranges differ in
 padding. All 396 stripped copies retain CodeView metadata and are not fully
 stripped. These checks do not validate other sections or source/function mapping.
 See `evidence/windows-pdb-2026-10-28/` for per-binary hashes and results.
+The `windows_pdb_evidence` config exposes those records as a raw JSONL dataset.
 '''
     return '---' + header + '---' + body
