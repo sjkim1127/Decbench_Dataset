@@ -177,7 +177,7 @@ def config_specs(rows):
         for lang in sorted({r['language'] for r in rows})]
 
 
-def update_card(card, specs, revision):
+def update_card(card, specs, revision, *, windows_pdb_evidence=False):
     parts = card.split('---', 2)
     if len(parts) != 3 or parts[0].strip() or 'configs:' not in parts[1]:
         raise ValueError('Unexpected dataset card front matter')
@@ -188,6 +188,7 @@ def update_card(card, specs, revision):
         header = header.rstrip() + f'\n- config_name: {name}\n  data_files:\n  - split: raw\n    path: {pattern}\n'
     body = re.sub(r'\n## Architecture and language views\n.*?(?=\n## |\Z)', '', parts[2], flags=re.S)
     body = re.sub(r'\n## ARMv7 and RISC-V64 raw campaign\n.*?(?=\n## |\Z)', '', body, flags=re.S)
+    body = re.sub(r'\n## Windows PE and PDB verification\n.*?(?=\n## |\Z)', '', body, flags=re.S)
     body = body.replace(
         'Source snapshots, compiled binaries and provenance for a future multi-language\n'
         'decompilation dataset. Planned languages: C, C++, Rust, Go, Zig, Swift, Fortran, D,\n'
@@ -241,5 +242,16 @@ normalized observed child argv, flags, toolchain/image identity and logs. GNU
 debuglink CRC and stripped `.text` equality are checked; none proves semantics.
 See `native/cross-isa-2026-10-28/summary.json`. Its qualification pilot contains
 source/DWARF/symbol candidates with zero qualified functions.
+'''
+    if windows_pdb_evidence:
+        body += '''
+## Windows PE and PDB verification
+
+For 396 MSVC/clang-cl build attempts, original PE CodeView GUID/age matches the
+corresponding PDB. The `.text` bytes within each PE's declared virtual size match
+its `llvm-objcopy --strip-debug` copy; 394 raw section byte ranges differ in
+padding. All 396 stripped copies retain CodeView metadata and are not fully
+stripped. These checks do not validate other sections or source/function mapping.
+See `evidence/windows-pdb-2026-10-28/` for per-binary hashes and results.
 '''
     return '---' + header + '---' + body

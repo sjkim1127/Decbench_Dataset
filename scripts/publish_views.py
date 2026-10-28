@@ -95,7 +95,8 @@ def main():
                'kind': 'revision-pinned-raw-metadata-views', **describe(rows), 'inputs': inputs}
     (views / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
     specs = config_specs(rows)
-    card = update_card(fetch('README.md').read_text(), specs, revision)
+    card = update_card(fetch('README.md').read_text(), specs, revision,
+                       windows_pdb_evidence='evidence/windows-pdb-2026-10-28/summary.json' in files)
     (destination / 'README.md').write_text(card)
     (views / 'README.md').write_text('''# Architecture and language catalog
 

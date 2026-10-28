@@ -16,7 +16,8 @@ rust_linux_arm64 = rust.filter(lambda r:
 Configs:
 
 - `all_records`
-- `architecture_x86`, `architecture_x86_64`, `architecture_aarch64`
+- `architecture_x86`, `architecture_x86_64`, `architecture_aarch64`,
+  `architecture_armv7`, `architecture_riscv64`
 - `language_c`, `language_cpp`, `language_rust`, `language_go`, `language_zig`,
   `language_swift`, `language_fortran`, `language_d`, `language_nim`
 
@@ -34,7 +35,7 @@ For payload downloads pass `revision=row["source_dataset_revision"]` and
 `artifact_index_repo_path` records tar member names and SHA-256 values. Verify
 those hashes before consuming extracted files.
 
-## Current snapshot
+## Initial 2026-10-25 snapshot
 
 The first view snapshot uses original data revision
 `ee7f517a7ca8aec523365f49e503a288da99502b`.
@@ -56,7 +57,7 @@ contain two replay attempts per row; other rows represent one build attempt.
 groups replay attempts within existing collector identities; it is not a universal
 source-function deduplication key. Local and hosted campaigns both remain visible.
 
-Only C/C++ currently have x86 records; x86-64 and AArch64 language coverage is
+Only C/C++ initially had x86 records; x86-64 and AArch64 language coverage is
 uneven. View availability does not imply a complete language/architecture/OS
 matrix. All records retain `qualified=false`; no benchmark split or metric is
 created by grouping metadata. Failed acquisition history outside primary campaign

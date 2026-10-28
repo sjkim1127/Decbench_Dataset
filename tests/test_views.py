@@ -79,6 +79,16 @@ class CatalogViewsTests(unittest.TestCase):
         self.assertEqual(specs['architecture_riscv64'], 'views/data/riscv64/*.parquet')
         self.assertEqual(specs['architecture_armv7'], 'views/data/armv7/*.parquet')
 
+    def test_explicit_windows_target_survives_and_evidence_card_is_idempotent(self):
+        row = self.row()
+        row['manifest_json'] = json.dumps({'commands':[{'argv':['clang-cl','--target=aarch64-pc-windows-msvc']}]})
+        result = normalize(row, 'native/c/data/attempts.parquet', 0, 'r', 's')
+        self.assertEqual(result['compiler_target'], 'aarch64-pc-windows-msvc')
+        card = '---\nconfigs:\n- config_name: builds\n  data_files:\n  - split: raw\n    path: data/*.parquet\n---\n# Corpus\n'
+        specs = config_specs([result])
+        updated = update_card(card, specs, 's', windows_pdb_evidence=True)
+        self.assertEqual(update_card(updated, specs, 's', windows_pdb_evidence=True), updated)
+
 
 if __name__ == '__main__':
     unittest.main()
