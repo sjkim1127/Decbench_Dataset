@@ -102,6 +102,14 @@ class CatalogViewsTests(unittest.TestCase):
         self.assertIsNone(row['family_id'])
         self.assertEqual(row['family_id_status'], 'unreviewed')
 
+    def test_derived_binary_is_not_counted_as_a_new_build_attempt(self):
+        row=self.row()
+        row['manifest_json']=json.dumps({'derivation':{'source_dataset_revision':'a'*40},'track':'pe-debug-directory-free'})
+        result=normalize(row,'native/c/data/attempts.parquet',0,'r','s')
+        self.assertEqual(result['row_grain'],'derived-binary')
+        self.assertEqual(result['physical_attempt_count'],0)
+        self.assertEqual(result['track'],'pe-debug-directory-free')
+
 
 if __name__ == '__main__':
     unittest.main()

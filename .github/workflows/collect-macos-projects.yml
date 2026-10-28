@@ -1,0 +1,36 @@
+name: collect-macos-whole-projects
+on:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  collect:
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [aarch64, x86_64]
+    runs-on: macos-15
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Ensure upstream build tools exist
+        run: |
+          command -v cmake || brew install cmake
+          command -v ninja || brew install ninja
+      - name: Build pinned upstream full projects
+        run: python scripts/collect_macos_projects.py --arch ${{ matrix.arch }} --output corpus/macos-projects-${{ matrix.arch }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: macos-projects-${{ matrix.arch }}-${{ github.run_id }}
+          path: |
+            corpus/macos-projects-*/attempts.jsonl
+            corpus/macos-projects-*/builds/
+            corpus/macos-projects-*/sources/*.tar
+          if-no-files-found: warn
+          retention-days: 30

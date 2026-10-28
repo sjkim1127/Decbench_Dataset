@@ -1,0 +1,7 @@
+{
+  "schema_version": "native-0.3.0",
+  "projects": [
+    {"id":"zlib", "repository_url":"https://github.com/madler/zlib.git", "commit_sha":"767c4c947852e143f582c85f14cf573411df1b35", "language":"c", "license_file":"LICENSE", "license_sha256":"e32ff4e00d9d94930537635291da39e7e612703334bf6fde8c7f1686fe8a45a2", "license_spdx":"Zlib", "license_review":"reviewed-original-upstream-project", "source_snapshot_license_scope":"per-file-upstream-licenses-retained"},
+    {"id":"fmt", "repository_url":"https://github.com/fmtlib/fmt.git", "commit_sha":"0fc31633e7d53ac895ae0a688b83b7d44f0b0c1f", "language":"cpp", "license_file":"LICENSE", "license_sha256":"a65fcc5a1095fc33cc37e4fff69366e49d7e92f613558a2b95ed1b70e33758b4", "license_spdx":"MIT", "license_review":"reviewed-original-upstream-project", "source_snapshot_license_scope":"per-file-upstream-licenses-retained"}
+  ]
+}

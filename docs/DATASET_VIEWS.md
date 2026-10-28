@@ -39,6 +39,12 @@ they are evidence tables rather than build-attempt tables.
 detect forks or shared upstream code: `family_id` is explicitly null/unreviewed
 until family relationships are researched. No train/test split is assigned.
 
+Debug-directory-free PE rows are labeled `row_grain=derived-binary`,
+`track=pe-debug-directory-free`, and `physical_attempt_count=0`: they are
+postprocessed inputs derived from existing builds, not additional compilations.
+Their manifests point to the original binary, PDB, source and build metadata at
+the immutable recorded dataset revision.
+
 Every row retains its original metadata JSON and full manifest JSON, plus the
 original metadata path/row and immutable dataset revision. Compiler versions,
 ordered flags, OS/SDK/ABI evidence and licenses remain available there.

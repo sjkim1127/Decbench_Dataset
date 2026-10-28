@@ -40,9 +40,14 @@ def identity(row,corpus,out):
 
 
 def main():
+    global PREFIX
     parser=argparse.ArgumentParser();parser.add_argument('--corpus',action='append',type=Path,required=True)
     parser.add_argument('--history',action='append',type=Path,default=[]);parser.add_argument('--output',type=Path,required=True)
+    parser.add_argument('--prefix',default=PREFIX,help='Repository-relative campaign prefix')
     parser.add_argument('--publish',action='store_true');args=parser.parse_args()
+    if not args.prefix.startswith('opensource/') or '..' in Path(args.prefix).parts:
+        raise ValueError('Expected safe opensource/ campaign prefix')
+    PREFIX=args.prefix.rstrip('/')
     destination=args.output.resolve();destination.mkdir(parents=True,exist_ok=True)
     reviewed_projects={p['repository']:p for p in json.loads((ROOT/'configs/additional-language-projects.json').read_text())['projects']}
     groups={};failed=[];history_roots=[]

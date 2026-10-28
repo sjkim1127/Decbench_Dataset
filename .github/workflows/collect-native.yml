@@ -5,7 +5,7 @@ on:
       campaign:
         description: 'Select the native acquisition campaign'
         type: choice
-        options: [standard, windows, macos]
+        options: [standard, windows, macos, macos-projects]
         default: standard
   push:
     branches: ['codex/corpus-platform-expansion']
@@ -71,3 +71,6 @@ jobs:
   macos-matrix:
     if: ${{ inputs.campaign == 'macos' }}
     uses: ./.github/workflows/collect-macos-matrix.yml
+  macos-projects:
+    if: ${{ inputs.campaign == 'macos-projects' }}
+    uses: ./.github/workflows/collect-macos-projects.yml

@@ -120,6 +120,7 @@ def normalize(row, metadata_path, row_number, repo, revision):
         raise ValueError('Unreviewed build status: ' + status)
     prefix = campaign_prefix(metadata_path)
     is_pilot = metadata_path.startswith('data/')
+    is_derived = bool(manifest.get('derivation', {}).get('source_dataset_revision'))
     replay_paths = manifest.get('reproducibility', {}).get('replay_paths', [])
     if is_pilot and not replay_paths:
         raise ValueError('Pilot build missing replay membership')
@@ -151,10 +152,10 @@ def normalize(row, metadata_path, row_number, repo, revision):
         'format': row.get('format') or target.get('format') or observed.get('format'),
         'abi': row.get('abi') or target.get('abi'),
         'target_triple': row.get('target_triple') or target.get('triple'),
-        'profile': profile, 'track': row.get('track'), 'status': status,
+        'profile': profile, 'track': row.get('track') or manifest.get('track'), 'status': status,
         'isa_mode':target.get('isa_mode'), 'build_scope':scope, **dimensions,
-        'qualified': False, 'row_grain': 'build-with-replays' if is_pilot else 'build-attempt',
-        'attempt': row.get('attempt'), 'physical_attempt_count': len(replay_paths) if is_pilot else 1,
+        'qualified': False, 'row_grain': 'derived-binary' if is_derived else 'build-with-replays' if is_pilot else 'build-attempt',
+        'attempt': row.get('attempt'), 'physical_attempt_count': 0 if is_derived else len(replay_paths) if is_pilot else 1,
         'source_repository':repository, 'source_commit':source_commit,
         'project_id':project_id, 'revision_id':revision_id, 'family_id':None,
         'family_id_status':'unreviewed', 'variant_group_id':row['build_id'], 'replay_group_id':row['build_id'],
@@ -246,8 +247,9 @@ compiler/linker columns only report evidence actually captured.
 remains unreviewed/null because forks and related projects are not yet mapped.
 No train/test split has been assigned.
 
-Rows preserve original granularity: initial pilot rows contain two replays;
-other rows are individual attempts. Read `row_grain`, `attempt`, and
+Rows preserve original granularity: initial pilot rows contain two replays,
+other original rows represent attempts, and postprocessed PE rows are derived
+binaries with `physical_attempt_count=0`. Read `row_grain`, `attempt`, and
 `physical_attempt_count`; row totals are neither unique binaries nor functions.
 Failed build attempts stay visible; filter `status == "success"` for available
 products. All records remain raw/unqualified. See `views/summary.json` for
