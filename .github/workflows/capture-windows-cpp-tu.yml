@@ -1,0 +1,58 @@
+name: capture-windows-cpp-tu
+on:
+  push:
+    branches: ['codex/windows-cpp-preprocessing']
+    paths: ['.github/workflows/capture-windows-cpp-tu.yml', 'scripts/collect_windows_matrix.py']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  capture:
+    strategy:
+      fail-fast: false
+      matrix:
+        family: [msvc, clang-cl]
+    runs-on: windows-2022
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Select the installed ARM64 target environment
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $installation = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          $devcmd = Join-Path $installation 'Common7\Tools\VsDevCmd.bat'
+          cmd /s /c "`"$devcmd`" -no_logo -arch=arm64 -host_arch=amd64 && set" | ForEach-Object {
+            if ($_ -match '^([^=]+)=(.*)$') {
+              $name = $matches[1]; $value = $matches[2]
+              if ($name -match '^(PATH|INCLUDE|LIB|LIBPATH|VCToolsVersion|WindowsSDKVersion|VSCMD_ARG_TGT_ARCH|VSCMD_ARG_HOST_ARCH)$') {
+                "$name=$value" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+              }
+            }
+          }
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $llvm = 'C:\Program Files\LLVM\bin'
+          if (Test-Path (Join-Path $llvm 'clang-cl.exe')) {
+            $llvm | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          }
+      - name: Capture and recompile C++ preprocessing inputs
+        shell: pwsh
+        env:
+          COMPILER_FAMILY: ${{ matrix.family }}
+        run: |
+          python scripts/collect_windows_matrix.py --family $env:COMPILER_FAMILY --arch aarch64 --profiles O0 O2 O2-noinline --projects pugixml tinyxml2 --capture-cpp-tu --output corpus/cpp-tu-$env:COMPILER_FAMILY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cpp-tu-${{ matrix.family }}-aarch64-${{ github.run_id }}
+          path: |
+            corpus/cpp-tu-*/attempts.jsonl
+            corpus/cpp-tu-*/builds/
+            corpus/cpp-tu-*/sources/*.tar
+          if-no-files-found: error
+          retention-days: 30

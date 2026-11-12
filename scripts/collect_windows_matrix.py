@@ -7,11 +7,14 @@ Docker pilot schema: host/target/debug evidence must not be conflated.
 import argparse
 import hashlib
 import json
+import ntpath
 import os
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 import platform
+import re
 import shutil
 import subprocess
+from tempfile import TemporaryDirectory
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -66,6 +69,70 @@ def native_commands(system, arch, compiler, project, profile, source, out, famil
              str(out / 'unit.o'), '-o', str(out / ('binary.dylib' if system == 'macos' else 'binary.so'))]]
 
 
+_LINE_MARKER = re.compile(r'^\s*#\s*(?:line\s+)?\d+\s+"((?:\\.|[^"\\])*)"')
+
+
+def project_source_projection(data, source):
+    """Retain only preprocessed project source and the line markers."""
+    root = PureWindowsPath(ntpath.normpath(str(source)))
+    output = []
+    inside = False
+    project_lines = 0
+    for line in data.decode('utf-8-sig', 'surrogateescape').splitlines():
+        marker = _LINE_MARKER.match(line)
+        if marker:
+            spelling = re.sub(r'\\([\\"])', r'\1', marker[1])
+            path = PureWindowsPath(ntpath.normpath(ntpath.join(str(root), spelling)))
+            inside = not spelling.startswith('<') and path.is_relative_to(root)
+            output.append(line)
+        elif inside:
+            output.append(line)
+            project_lines += bool(line.strip())
+        else:
+            output.append('')
+    if not project_lines:
+        raise ValueError('Preprocessed TU has no project source with line markers')
+    return ('\n'.join(output) + '\n').encode('utf-8', 'surrogateescape'), project_lines
+
+
+def capture_cpp_tu(compile_argv, source, source_file, folder, family, record):
+    """Capture the original preprocessor input and compile its exact bytes."""
+    original_source = str(source / source_file)
+    object_option = '/Fo' + str(folder / 'unit.obj')
+    if compile_argv.count(original_source) != 1 or compile_argv.count(object_option) != 1:
+        raise ValueError('Unexpected native compile command')
+    with TemporaryDirectory(prefix='decbench-cpp-tu-') as temporary:
+        raw = Path(temporary) / 'unit.ii'
+        preprocess = [arg for arg in compile_argv if arg not in ('/c', object_option)]
+        preprocess += ['/P', '/Fi' + str(raw)]
+        result = run(preprocess, cwd=source)
+        record['commands'].append(result)
+        if result['returncode'] or not raw.is_file():
+            raise ValueError('C++ preprocessing failed')
+        replay = [str(raw) if arg == original_source else
+                  '/Fo' + str(folder / 'unit.replayed.obj') if arg == object_option else arg
+                  for arg in compile_argv]
+        if family == 'msvc':
+            replay.append('/TP')
+        result = run(replay, cwd=source)
+        record['commands'].append(result)
+        if result['returncode'] or not (folder / 'unit.replayed.obj').is_file():
+            raise ValueError('C++ preprocessed replay failed')
+        data = raw.read_bytes()
+        projection, project_lines = project_source_projection(data, source)
+        projected = folder / 'project.ii'
+        projected.write_bytes(projection)
+        record['cpp_preprocessing'] = {
+            'raw_sha256': hashlib.sha256(data).hexdigest(),
+            'raw_size': len(data),
+            'source_member_sha256': sha(original_source),
+            'project_projection': projected.name,
+            'project_projection_sha256': sha(projected),
+            'project_projection_lines': project_lines,
+            'replayed_object': 'unit.replayed.obj',
+        }
+
+
 def observed_binary(path):
     import struct
     b = path.read_bytes()
@@ -91,6 +158,8 @@ def main():
     p.add_argument('--config', type=Path, default=ROOT/'configs/native-projects.json')
     p.add_argument('--profiles', nargs='+', choices=['O0','O1','O2','O3','Os','Oz','O2-noinline','Osize-msvc'], default=['O0','O2'])
     p.add_argument('--family', choices=['msvc','clang-cl'], default='msvc')
+    p.add_argument('--projects', nargs='+')
+    p.add_argument('--capture-cpp-tu', action='store_true')
     args = p.parse_args()
     system = {'Darwin':'macos','Windows':'windows','Linux':'linux'}[platform.system()]
     if system == 'windows':
@@ -99,9 +168,17 @@ def main():
             raise ValueError('Unsupported compiler profile; MSVC /O1 is named Osize-msvc')
     elif any(x in ('O2-noinline','Osize-msvc') for x in args.profiles):
         raise ValueError('Windows-only profile for this native collector')
+    if args.capture_cpp_tu and system != 'windows':
+        p.error('--capture-cpp-tu requires the Windows compiler matrix')
     out = args.output.resolve()
     out.mkdir(parents=True, exist_ok=True)
     cfg = json.loads(args.config.read_text())
+    projects = cfg['projects']
+    if args.projects:
+        unknown = set(args.projects) - {project['id'] for project in projects}
+        if unknown:
+            p.error('Unknown projects: ' + ', '.join(sorted(unknown)))
+        projects = [project for project in projects if project['id'] in args.projects]
     ledger = out/'attempts.jsonl'
     failures = 0
     # Explicit allowlist: do not dump full hosted-runner environments/credentials.
@@ -118,7 +195,7 @@ def main():
         host['sdk_version'] = run(['xcrun','--show-sdk-version'])
         host['xcode'] = run(['xcodebuild','-version'])
         host['os_build'] = run(['sw_vers'])
-    for project in cfg['projects']:
+    for project in projects:
         source = out/'sources'/project['id']
         source.parent.mkdir(exist_ok=True)
         if not source.exists():
@@ -162,9 +239,12 @@ def main():
                           'execution_tests':'not-run','child_argv_trace':'verbose-only','network_isolation':'not-enforced-native-direct-compiler-no-upstream-scripts',
                           'collector_sha256':sha(Path(__file__))}
                 try:
-                    for argv in native_commands(system,args.arch,str(executable),project,profile,source,folder,args.family):
+                    commands = native_commands(system,args.arch,str(executable),project,profile,source,folder,args.family)
+                    for argv in commands:
                         r=run(argv,cwd=source); record['commands'].append(r)
                         if r['returncode']: raise RuntimeError('Compiler/linker failed')
+                    if args.capture_cpp_tu and project['language'] == 'cpp':
+                        capture_cpp_tu(commands[0], source, project['source_file'], folder, args.family, record)
                     binary=folder/('binary.dll' if system=='windows' else 'binary.dylib' if system=='macos' else 'binary.so')
                     actual=observed_binary(binary)
                     if actual['arch']!=args.arch or actual['format']!=record['target']['format']:
