@@ -1,0 +1,73 @@
+name: Windows ARM64 byte diagnostic
+on:
+  push:
+    branches: ['codex/windows-arm64-byte-study']
+    paths: ['.github/workflows/windows-arm64-byte-study.yml', 'experiments/windows-arm64-byte/**']
+permissions:
+  contents: read
+jobs:
+  recompile:
+    runs-on: windows-2022
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        family: [clang-cl, msvc]
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Select the ARM64 cross-toolchain
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $installation = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          $devcmd = Join-Path $installation 'Common7\Tools\VsDevCmd.bat'
+          cmd /s /c "`"$devcmd`" -no_logo -arch=arm64 -host_arch=amd64 && set" | ForEach-Object {
+            if ($_ -match '^([^=]+)=(.*)$') {
+              $name = $matches[1]; $value = $matches[2]
+              if ($name -match '^(PATH|INCLUDE|LIB|LIBPATH|VCToolsVersion|WindowsSDKVersion|VSCMD_ARG_TGT_ARCH|VSCMD_ARG_HOST_ARCH)$') {
+                "$name=$value" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+              }
+            }
+          }
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          'C:\Program Files\LLVM\bin' | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - name: Fetch exact LLVM if the runner build differs
+        if: matrix.family == 'clang-cl'
+        run: |
+          $expected = '57e32b1ea2456f12f97bf802453171bbff12d56b2c486b4eca0c75343c0cda2c'
+          $current = Get-Command clang-cl.exe -ErrorAction SilentlyContinue
+          if ($current -and (Get-FileHash $current.Source -Algorithm SHA256).Hash -eq $expected) { exit 0 }
+          $installer = Join-Path $env:RUNNER_TEMP 'llvm-20.1.8.exe'
+          curl.exe -fsSL --retry 3 -o $installer https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.8/LLVM-20.1.8-win64.exe
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if ((Get-FileHash $installer -Algorithm SHA256).Hash -ne '3197846a2b19063687dd56e93e34cd941e3548d907f23a6131571321bdf9fe7b') { throw 'Unexpected LLVM installer digest' }
+          & 'C:\Program Files\7-Zip\7z.exe' x -y "-o$env:RUNNER_TEMP\exact-llvm" $installer | Out-Null
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          "$env:RUNNER_TEMP\exact-llvm\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - run: python -m pip install cryptography==50.0.1
+      - name: Unpack fixed inputs
+        env:
+          BYTE_STUDY_KEY: ${{ secrets.WINDOWS_ARM64_BYTE_STUDY_KEY }}
+        run: python experiments/windows-arm64-byte/replay.py unpack
+      - name: Recompile the original controls and recovered functions
+        env:
+          FAMILY: ${{ matrix.family }}
+        run: python experiments/windows-arm64-byte/replay.py run $env:FAMILY
+      - name: Package evidence
+        env:
+          BYTE_STUDY_KEY: ${{ secrets.WINDOWS_ARM64_BYTE_STUDY_KEY }}
+          FAMILY: ${{ matrix.family }}
+        run: python experiments/windows-arm64-byte/replay.py seal $env:FAMILY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arm64-byte-${{ matrix.family }}
+          path: ${{ matrix.family }}-results.aes
+          if-no-files-found: error
+          retention-days: 7
