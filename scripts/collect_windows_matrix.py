@@ -95,7 +95,7 @@ def project_source_projection(data, source):
     return ('\n'.join(output) + '\n').encode('utf-8', 'surrogateescape'), project_lines
 
 
-def capture_cpp_tu(compile_argv, source, source_file, folder, family, record):
+def capture_cpp_tu(compile_argv, source, source_file, folder, record):
     """Capture the original preprocessor input and compile its exact bytes."""
     original_source = str(source / source_file)
     object_option = '/Fo' + str(folder / 'unit.obj')
@@ -109,23 +109,31 @@ def capture_cpp_tu(compile_argv, source, source_file, folder, family, record):
         record['commands'].append(result)
         if result['returncode'] or not raw.is_file():
             raise ValueError('C++ preprocessing failed')
-        replay = [str(raw) if arg == original_source else
-                  '/Fo' + str(folder / 'unit.replayed.obj') if arg == object_option else arg
+        data = raw.read_bytes()
+        projection, project_lines = project_source_projection(data, source)
+        replay = ['/Fo' + str(folder / 'unit.replayed.obj') if arg == object_option else arg
                   for arg in compile_argv]
-        if family == 'msvc':
-            replay.append('/TP')
-        result = run(replay, cwd=source)
+        source_path = Path(original_source)
+        original_bytes = source_path.read_bytes()
+        original_stat = source_path.stat()
+        # Both compilers derive some private symbols from the primary input path.
+        # Replay inside this disposable checkout and restore the source after it.
+        try:
+            source_path.write_bytes(data)
+            result = run(replay, cwd=source)
+        finally:
+            source_path.write_bytes(original_bytes)
+            os.utime(source_path, ns=(original_stat.st_atime_ns, original_stat.st_mtime_ns))
         record['commands'].append(result)
         if result['returncode'] or not (folder / 'unit.replayed.obj').is_file():
             raise ValueError('C++ preprocessed replay failed')
-        data = raw.read_bytes()
-        projection, project_lines = project_source_projection(data, source)
         projected = folder / 'project.ii'
         projected.write_bytes(projection)
         record['cpp_preprocessing'] = {
             'raw_sha256': hashlib.sha256(data).hexdigest(),
             'raw_size': len(data),
-            'source_member_sha256': sha(original_source),
+            'source_member_sha256': hashlib.sha256(original_bytes).hexdigest(),
+            'replay_input_path': original_source,
             'project_projection': projected.name,
             'project_projection_sha256': sha(projected),
             'project_projection_lines': project_lines,
@@ -244,7 +252,7 @@ def main():
                         r=run(argv,cwd=source); record['commands'].append(r)
                         if r['returncode']: raise RuntimeError('Compiler/linker failed')
                     if args.capture_cpp_tu and project['language'] == 'cpp':
-                        capture_cpp_tu(commands[0], source, project['source_file'], folder, args.family, record)
+                        capture_cpp_tu(commands[0], source, project['source_file'], folder, record)
                     binary=folder/('binary.dll' if system=='windows' else 'binary.dylib' if system=='macos' else 'binary.so')
                     actual=observed_binary(binary)
                     if actual['arch']!=args.arch or actual['format']!=record['target']['format']:
