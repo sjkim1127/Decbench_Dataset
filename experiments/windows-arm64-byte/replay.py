@@ -5,6 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 from hashlib import sha256
 import io
 import json
+import ntpath
 import os
 from pathlib import Path
 import shutil
@@ -87,10 +88,12 @@ def run():
     assert env["VSCMD_ARG_TGT_ARCH"] == "arm64"
     assert env["VCToolsVersion"] == native["vc_tools"]
     assert env["WindowsSDKVersion"].rstrip("\\/") == native["windows_sdk"]
-    assert env["INCLUDE"].lower() == native["include"].lower()
+    assert [ntpath.normcase(ntpath.normpath(p)) for p in env["INCLUDE"].split(";")] == [
+        ntpath.normcase(ntpath.normpath(p)) for p in native["include"].split(";")
+    ]
     exe_name = "cl.exe" if family == "msvc" else "clang-cl.exe"
     exe = Path(shutil.which(exe_name) or exe_name)
-    if family == "clang-cl" and digest(exe) != expected:
+    if family == "clang-cl" and (not exe.is_file() or digest(exe) != expected):
         exe = Path(os.environ["RUNNER_TEMP"]) / "exact-llvm" / "bin" / exe_name
     assert exe.is_file() and digest(exe) == expected, f"{family} compiler digest mismatch"
     out = Path(f"native-{family}-results")
@@ -102,15 +105,35 @@ def run():
         "script_sha256": digest(Path(__file__)), "run_id": os.environ.get("GITHUB_RUN_ID"),
     })
     contract_hash = digest(contract)
+    capture_root = Path("corpus") / f"cpp-tu-{family}"
+    capture_env = {**os.environ, "PATH": str(exe.parent) + os.pathsep + os.environ["PATH"]}
+    capture_command = [sys.executable, "scripts/collect_windows_matrix.py", "--family", family,
+                       "--arch", "aarch64", "--profiles", "O0", "O2", "O2-noinline", "--projects",
+                       "pugixml", "tinyxml2", "--capture-cpp-tu", "--output", str(capture_root)]
+    with (out / "collector.log").open("wb") as log:
+        capture = subprocess.run(capture_command, env=capture_env, cwd=ROOT, stdout=log,
+                                 stderr=subprocess.STDOUT, timeout=600, check=False)
     controls = []
-    for cell, spec in cells.items():
+    for cell in cells:
         item = native["controls"][cell]
-        assert digest(ROOT / item["source"]) == item["source_sha256"]
-        flags = [flag for flag in spec["flags"] if flag not in {"/TC", "/std:c17"}]
-        result = compile_row(exe, [*flags, "/std:c++14"], item["source"],
-                             out / "controls" / f"{cell}.obj", contract_hash, {"cell": cell}, 120)
+        folder = capture_root / "builds" / item["project"] / item["profile"] / "1"
+        record_path = folder / "manifest.json"
+        result = {"cell": cell, "status": "control_rebuild_failed"}
+        if record_path.is_file():
+            record = json.loads(record_path.read_bytes())
+            assert record["source"]["commit_sha"] == item["commit_sha"]
+            assert record["source"]["tree_hash"] == item["tree_hash"]
+            assert record["toolchain"]["sha256"] == expected
+            if record["status"] == "success":
+                destination = out / "controls" / cell
+                destination.mkdir(parents=True, exist_ok=True)
+                for name in ("unit.obj", "unit.replayed.obj", "manifest.json"):
+                    shutil.copy2(folder / name, destination / name)
+                result = {"cell": cell, "status": "compiled", "path": destination.as_posix(),
+                          "manifest_sha256": digest(destination / "manifest.json")}
         controls.append(result)
     write(out / "CONTROLS.json", controls)
+    print("Original-control collector exit code", capture.returncode, flush=True)
 
     def produce(row):
         cell, tool, address = (row[name] for name in ("cell", "tool", "address"))
